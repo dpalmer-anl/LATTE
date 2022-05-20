@@ -34,7 +34,8 @@ SUBROUTINE BLDNEWHS
 #endif
 
   IMPLICIT NONE
-
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   INTEGER :: I, J, NEWJ, K, L, II, JJ, KK, MM, MP, NN, SUBI
   INTEGER :: IBRA, IKET, LBRA, LKET, MBRA, MKET
   INTEGER :: INDEX, INDI, INDJ
@@ -75,6 +76,7 @@ SUBROUTINE BLDNEWHS
 !$OMP PARALLEL DO DEFAULT (NONE) &
 !$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB) &
 !$OMP SHARED(CR, BOX, H, SMAT) &
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, ORBITAL_LIST, CUTOFF_LIST) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP, PHI, ALPHA, BETA, COSBETA) &
@@ -88,7 +90,12 @@ SUBROUTINE BLDNEWHS
      ! Build the lists of orbitals on each atom
 
      BASISI(:) = ORBITAL_LIST(:,I)
-
+     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0
+     ELSE
+             SPECIFYMBRA = .FALSE.
+     ENDIF
      INDI = MATINDLIST(I)
 
      ! open loop over neighbors J of atom I
@@ -118,7 +125,13 @@ SUBROUTINE BLDNEWHS
            MAGR = SQRT(MAGR2)
 
            BASISJ(:) = ORBITAL_LIST(:,J)
-           
+           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN
+              SPECIFYMBRA= .TRUE. 
+              MPOINTBRA=0
+           ELSE
+              SPECIFYMBRA = .FALSE.
+           ENDIF
+            
            INDJ = MATINDLIST(J)
            
            MAGRP = SQRT(RIJ(1) * RIJ(1) + RIJ(2) * RIJ(2))
@@ -169,7 +182,12 @@ SUBROUTINE BLDNEWHS
               LBRAINC = LBRAINC + 1
               
               DO MBRA = -LBRA, LBRA
-                 
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN 
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
                  ! We can calculate these two outside the
                  ! MKET loop...
                  
@@ -194,7 +212,12 @@ SUBROUTINE BLDNEWHS
 
                     
                     DO MKET = -LKET, LKET
-                       
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF      
                        ! This is the sigma bonds (mp = 0)
                        
                        ! Hamiltonian build

@@ -31,7 +31,8 @@ SUBROUTINE KBLDNEWH
   USE MYPRECISION
 
   IMPLICIT NONE
-
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   INTEGER :: I, J, NEWJ, K, L, II, JJ, KK, MM, MP, NN, SUBI
   INTEGER :: IBRA, IKET, LBRA, LKET, MBRA, MKET
   INTEGER :: INDEX, INDI, INDJ
@@ -50,7 +51,7 @@ SUBROUTINE KBLDNEWH
   REAL(LATTEPREC) :: AMMBRA, WIGLBRAMBRA
   REAL(LATTEPREC) :: B1(3), B2(3), B3(3), A1A2XA3, K0(3)
   COMPLEX(LATTEPREC) :: BLOCH, KHTMP, KSTMP
-  REAL(LATTEPREC), EXTERNAL :: ANGFACTOR, UNIVSCALE
+  REAL(LATTEPREC), EXTERNAL :: UNIVSCALE, WIGNERD, SLMMP,TLMMP,AM,BM,ANGFACTOR
 
   IF (EXISTERROR) RETURN
 
@@ -111,21 +112,22 @@ SUBROUTINE KBLDNEWH
 
   ENDIF
 
-  K0 = PI*KSHIFT
+  !K0 = PI*KSHIFT
 
-!  K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
-!       PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
-!       PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
+  K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
+       PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
+       PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
 
 !$OMP PARALLEL DO DEFAULT (NONE) & 
 !$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB, ORBITAL_LIST, CUTOFF_LIST) &    
-!$OMP SHARED(CR, BOX, B1, B2, B3, HK, SK) &           
+!$OMP SHARED(CR, BOX, B1, B2, B3, HK, SK) &  
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, K0, NKX, NKY, NKZ) &
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP, PHI, ALPHA, BETA, COSBETA) &
 !$OMP PRIVATE(LBRAINC, LBRA, MBRA, L, LKETINC, LKET, MKET) &        
 !$OMP PRIVATE(BLOCH, KDOTL, KPOINT, KCOUNT, KHTMP, KSTMP)&
-!$OMP PRIVATE(RCUTTB, IBRA, IKET, MYANGFACTOR, MP) &
+!$OMP PRIVATE(RCUTTB, IBRA, IKET, AMMBRA,WIGLBRAMBRA,MYANGFACTOR, MP) & 
 !$OMP PRIVATE(MYBONDINT, MYOVERLAPINT)
 
   DO I = 1, NATS
@@ -133,7 +135,12 @@ SUBROUTINE KBLDNEWH
      ! Build the lists of orbitals on each atom
 
      BASISI(:) = ORBITAL_LIST(:,I)
-
+     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+     ELSE 
+             SPECIFYMBRA = .FALSE. 
+     ENDIF
      INDI = MATINDLIST(I)
 
      ! open loop over neighbors J of atom I
@@ -163,7 +170,15 @@ SUBROUTINE KBLDNEWH
            MAGR = SQRT(MAGR2)
 
            BASISJ(:) = ORBITAL_LIST(:,J)
-
+           
+           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN
+                    
+                   SPECIFYMKET= .TRUE. 
+                   MPOINTKET=0 
+           ELSE 
+                   SPECIFYMKET = .FALSE. 
+           ENDIF
+           
            INDJ = MATINDLIST(J)
 
            MAGRP = SQRT(RIJ(1) * RIJ(1) + RIJ(2) * RIJ(2))
@@ -214,13 +229,20 @@ SUBROUTINE KBLDNEWH
               LBRA = BASISI(LBRAINC)
               LBRAINC = LBRAINC + 1
 
+              ! constrain this loop to m=0 for pz case
               DO MBRA = -LBRA, LBRA
-
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN
+                                  
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
                  ! We can calculate these two outside the 
                  ! MKET loop...
 
-!                 AMMBRA = AM(MBRA, ALPHA)
-!                 WIGLBRAMBRA = WIGNERD(LBRA, ABS(MBRA), 0, COSBETA)
+                 AMMBRA = AM(MBRA, ALPHA)
+                 WIGLBRAMBRA = WIGNERD(LBRA, ABS(MBRA), 0, COSBETA)
 
                  IKET = INDJ + 1
 
@@ -240,9 +262,17 @@ SUBROUTINE KBLDNEWH
                             MYOVERLAPINT(MP) = UNIVSCALE(I, J, LBRA, LKET, MP, MAGR, "S")
 
                     ENDDO
-
+                    ! constrain this loop to m=0 for pz case
                     DO MKET = -LKET, LKET
-
+                       
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                        
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF
+                       
                        ! This is the sigma bonds (mp = 0)
 
                        ! Hamiltonian build
@@ -252,15 +282,12 @@ SUBROUTINE KBLDNEWH
 
                        MYANGFACTOR = ANGFACTOR(LBRA, LKET, MBRA, MKET, 0, ALPHA, COSBETA)
                        
-!                       ANGFACTOR = TWO * AMMBRA * &
-!                            AM(MKET, ALPHA) * &
-!                            WIGLBRAMBRA * & 
-!                            WIGNERD(LKET, ABS(MKET), 0, COSBETA)
-
                        KHTMP = CMPLX(MYANGFACTOR * MYBONDINT(0)) 
+                       
 
                        IF (BASISTYPE .EQ. "NONORTHO") THEN
                           KSTMP = CMPLX(MYANGFACTOR * MYOVERLAPINT(0))
+                          
                        ENDIF
 
                        KCOUNT = 0
@@ -273,24 +300,24 @@ SUBROUTINE KBLDNEWH
 
                              DO KZ = 1, NKZ
 
-!                                KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
-!                                     REAL(KY-1)*B2/REAL(NKY) + &
-!                                     REAL(KZ-1)*B3/REAL(NKZ)) + K0
+                                KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
+                                     REAL(KY-1)*B2/REAL(NKY) + &
+                                     REAL(KZ-1)*B3/REAL(NKZ)) + K0
 
 !                                print*, kx, ky, kz, kpoint
 
-                                KPOINT = ZERO
-                                KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-
+                                !KPOINT = K0 !ZERO
+                                !KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+                                !KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+                                !KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+                                
                                 KCOUNT = KCOUNT+1
-
+                                
                                 KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
                                      KPOINT(3)*RIJ(3)
-
+                                
                                 BLOCH = EXP(CMPLX(ZERO,KDOTL))
-
+                                
                                 HK(IBRA, IKET, KCOUNT) = &
                                      HK(IBRA, IKET, KCOUNT) + &
                                      BLOCH*KHTMP
@@ -312,10 +339,14 @@ SUBROUTINE KBLDNEWH
 
                           MYANGFACTOR = ANGFACTOR(LBRA, LKET, MBRA, MKET, MP, ALPHA, COSBETA)
 
-                          KHTMP = CMPLX(MYANGFACTOR * MYBONDINT(MP))
+                          KHTMP = CMPLX(MYANGFACTOR * MYBONDINT(MP)) 
+
+                        
+                          
 
                           IF (BASISTYPE .EQ. "NONORTHO") THEN
                              KSTMP = CMPLX(MYANGFACTOR * MYOVERLAPINT(MP))
+                             
                           ENDIF
 
                           KCOUNT = 0
@@ -324,10 +355,13 @@ SUBROUTINE KBLDNEWH
                              DO KY = 1, NKY
                                 DO KZ = 1, NKZ
 
-                                   KPOINT = ZERO
-                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+                                   !KPOINT = ZERO
+                                   !KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+                                   !KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+                                   !KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+                                   KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
+                                            REAL(KY-1)*B2/REAL(NKY) + &
+                                            REAL(KZ-1)*B3/REAL(NKZ)) + K0
 
                                    KCOUNT = KCOUNT+1
 

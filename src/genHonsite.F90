@@ -44,6 +44,10 @@ SUBROUTINE GENHONSITE
 
         INDEX = INDEX + 1
         H_ONSITE(INDEX) = HES(K)
+     CASE("pz")
+
+        INDEX = INDEX + 1
+        H_ONSITE(INDEX) = HEP(K)
 
      CASE("p")
 

@@ -41,6 +41,8 @@ SUBROUTINE GETMATINDLIST
         SELECT CASE(BASIS(ELEMPOINTER(J)))
         CASE("s")
            INDI = INDI + 1
+        CASE("pz")
+           INDI = INDI + 1
         CASE("p")
            INDI = INDI + 3
         CASE("d")
@@ -89,6 +91,8 @@ SUBROUTINE GETMATINDLIST
 
            SELECT CASE(BASIS(ELEMPOINTER(J)))
            CASE("s")
+              INDI = INDI + 1
+           CASE("pz")
               INDI = INDI + 1
            CASE("p")
               INDI = INDI + 1

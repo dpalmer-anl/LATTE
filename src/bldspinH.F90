@@ -64,6 +64,13 @@ SUBROUTINE BLDSPINH
 
         H2VECT(HINDEX + 1) = HSS
         HINDEX = HINDEX + 1
+     CASE("pz")
+
+        HPP = WPP(ELEMPOINTER(I))*DELTASPIN(INDEX + 1)
+        INDEX = INDEX + 1
+
+        H2VECT(HINDEX + 1) = HPP
+        HINDEX = HINDEX + 1
 
      CASE("p")
 

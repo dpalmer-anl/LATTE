@@ -40,6 +40,9 @@ SUBROUTINE GENORBITALLIST
      CASE("s")
         ORBITAL_LIST(1,I) = 0
         ORBITAL_LIST(2,I) = -1
+     CASE("pz")
+        ORBITAL_LIST(1,I)= 1
+        ORBITAL_LIST(2,I) = -1
      CASE("p")
         ORBITAL_LIST(1,I) = 1
         ORBITAL_LIST(2,I) = -1

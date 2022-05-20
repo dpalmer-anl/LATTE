@@ -44,6 +44,8 @@ SUBROUTINE GETHDIM
 
         CASE("s")
            NUMORB = 1
+        CASE("pz")
+           NUMORB = 1
         CASE("p")
            NUMORB = 3
         CASE("d")
@@ -167,6 +169,8 @@ SUBROUTINE GETHDIM
 
         CASE("s")
            NUMORB = 1
+        CASE("pz")
+           NUMORB = 1
         CASE("p")
            NUMORB = 1
         CASE("d")
@@ -234,7 +238,7 @@ SUBROUTINE GETHDIM
      OLDDELTASPIN = ZERO
 
   ENDIF
-
+  PRINT *,"HDIM",HDIM
   RETURN
 
 END SUBROUTINE GETHDIM

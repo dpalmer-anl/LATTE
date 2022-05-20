@@ -63,6 +63,11 @@ SUBROUTINE RHOZERO
 
            BOZERO(INDEX + 1) = ATOCC(ELEMPOINTER(I))
            INDEX = INDEX + 1
+        CASE("pz")
+
+           BOZERO(INDEX + 1) = ATOCC(ELEMPOINTER(I))
+           INDEX = INDEX + 1
+
 
         CASE("p")
 
@@ -813,6 +818,24 @@ SUBROUTINE RHOZERO
               INDEX = INDEX + 1
 
            ENDIF
+        CASE("pz")
+
+           IF (ATOCC(ELEMPOINTER(I)) .LE. SPINMAXS) THEN
+
+              RHOUPZERO(INDEX+1) = ATOCC(ELEMPOINTER(I))
+              RHODOWNZERO(INDEX+1) = ZERO
+
+              INDEX = INDEX + 1
+
+           ELSE
+
+              RHOUPZERO(INDEX+1) = ONE
+              RHODOWNZERO(INDEX+1) = ATOCC(ELEMPOINTER(I)) - SPINMAXS
+
+              INDEX = INDEX + 1
+
+           ENDIF
+
 
         CASE("p")
 

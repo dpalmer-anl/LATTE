@@ -106,6 +106,15 @@ SUBROUTINE GETDELTASPIN_RESP
            ENDDO
 
            INDEX = INDEX + 1
+        CASE("pz")
+
+           DINDEX = DINDEX + 1
+           DO J = 1, 2
+             DELTA_QS(DINDEX,J) = SPINDEN(INDEX + 1,J)
+           ENDDO
+
+           INDEX = INDEX + 1
+
 
         CASE("p")
 
@@ -467,6 +476,10 @@ DO I = 1, NATS
    CASE("s")
 
       NUMORB2 = 1
+   CASE("pz")
+
+      NUMORB2 = 1
+
 
    CASE("p")
 

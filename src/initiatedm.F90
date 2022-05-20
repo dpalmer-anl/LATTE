@@ -66,6 +66,13 @@ SUBROUTINE INITIATEDM
         H_INDEX_END(I) = CNT - 1
 
         DFTB_U(H_INDEX_START(I):H_INDEX_END(I)) = S_DFTB_U
+    CASE("pz")
+
+        H_INDEX_START(I) = CNT
+        CNT = CNT + 1
+        H_INDEX_END(I) = CNT - 1
+
+        DFTB_U(H_INDEX_START(I):H_INDEX_END(I)) = P_DFTB_U
      CASE("p")
 
         H_INDEX_START(I) = CNT

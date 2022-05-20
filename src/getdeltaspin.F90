@@ -468,6 +468,16 @@ SUBROUTINE GETDELTASPIN
            SUMSPIN(DINDEX) = SPINLIST2(INDEX + 1)
 
            INDEX = INDEX + 1
+        CASE("pz")
+
+           DINDEX = DINDEX + 1
+
+           DELTASPIN(DINDEX) = SPINLIST(INDEX + 1)
+
+           SUMSPIN(DINDEX) = SPINLIST2(INDEX + 1)
+
+           INDEX = INDEX + 1
+
 
         CASE("p")
 

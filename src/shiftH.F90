@@ -53,6 +53,8 @@ SUBROUTINE SHIFTH(CHI)
 
            CASE("s")
               NUMORB = 1
+           CASE("pz")
+              NUMORB = 1
            CASE("p")
               NUMORB = 3
            CASE("d")
@@ -99,6 +101,8 @@ SUBROUTINE SHIFTH(CHI)
            SELECT CASE(BASIS(ELEMPOINTER(I)))
               
            CASE("s")
+              NUMORB = 1
+           CASE("pz")
               NUMORB = 1
            CASE("p")
               NUMORB = 3
@@ -178,6 +182,8 @@ SUBROUTINE SHIFTH(CHI)
                  
               CASE("s")
                  NUMORB = 1
+              CASE("pz")
+                 NUMORB = 1
               CASE("p")
                  NUMORB = 3
               CASE("d")
@@ -226,6 +232,8 @@ SUBROUTINE SHIFTH(CHI)
            SELECT CASE(BASIS(ELEMPOINTER(I)))
 
            CASE("s")
+              NUMORB = 1
+           CASE("pz")
               NUMORB = 1
            CASE("p")
               NUMORB = 3

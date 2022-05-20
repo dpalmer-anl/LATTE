@@ -29,7 +29,7 @@ SUBROUTINE ADDQDEP
   USE MYPRECISION
 
   IMPLICIT NONE
-
+  
   INTEGER :: I, J, K
   INTEGER :: INDEX, NUMORB
   REAL(LATTEPREC) :: ES, EP, ED, EF
@@ -51,6 +51,11 @@ SUBROUTINE ADDQDEP
            SELECT CASE(BASIS(ELEMPOINTER(I)))
 
            CASE("s")
+
+              H(INDEX + 1, INDEX + 1) = HDIAG(INDEX + 1) + HMOD
+              INDEX = INDEX + 1
+
+           CASE("pz")
 
               H(INDEX + 1, INDEX + 1) = HDIAG(INDEX + 1) + HMOD
               INDEX = INDEX + 1
@@ -260,6 +265,8 @@ SUBROUTINE ADDQDEP
 
            CASE("s")
               NUMORB = 1
+           CASE("pz")
+              NUMORB = 1
            CASE("p")
               NUMORB = 3
            CASE("d")
@@ -337,6 +344,8 @@ SUBROUTINE ADDQDEP
 
               CASE("s")
                  NUMORB = 1
+              CASE("pz")
+                 NUMORB = 1
               CASE("p")
                  NUMORB = 3
               CASE("d")
@@ -387,6 +396,8 @@ SUBROUTINE ADDQDEP
            SELECT CASE(BASIS(ELEMPOINTER(I)))
 
            CASE("s")
+              NUMORB = 1
+           CASE("pz")
               NUMORB = 1
            CASE("p")
               NUMORB = 3

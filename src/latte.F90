@@ -57,7 +57,7 @@ PROGRAM LATTE
   INTEGER :: MYID = 0
   REAL :: TARRAY(2), RESULT, SYSTDIAG, SYSTPURE
   CHARACTER(LEN=50) :: FLNM
-
+  LOGICAL :: PROFILE
 #ifdef MPI_ON
   INTEGER :: IERR, STATUS(MPI_STATUS_SIZE), NUMPROCS
 
@@ -65,7 +65,7 @@ PROGRAM LATTE
   CALL MPI_COMM_RANK( MPI_COMM_WORLD, MYID, IERR )
   CALL MPI_COMM_SIZE( MPI_COMM_WORLD, NUMPROCS, IERR )
 #endif
-
+  PROFILE = .TRUE.
   NUMSCF = 0
   CHEMPOT = ZERO
 
@@ -128,6 +128,9 @@ PROGRAM LATTE
 
   CALL BUILD_INTEGRAL_MAP 
 
+  IF (PROFILE) THEN
+          PRINT *, "initialization finished"
+  ENDIF
 #ifdef GPUON
 
   CALL initialize( NGPU )
@@ -184,12 +187,20 @@ PROGRAM LATTE
         !IF (SPONLY .EQ. 0) THEN
         !   CALL BLDNEWHS_SP
         !ELSE
+
            CALL BLDNEWHS
+           IF (PROFILE) THEN
+             PRINT *, "BLDNEWHS PASSED"
+           ENDIF
+
         !ENDIF
 
      ELSE
 
         CALL KBLDNEWH
+        IF (PROFILE) THEN
+            PRINT *, "KBLDNEWH PASSED"
+        ENDIF
 
      ENDIF
 
@@ -206,12 +217,19 @@ PROGRAM LATTE
      !
 
      IF (SPINON .EQ. 1) THEN
+
         CALL GETDELTASPIN
         CALL BLDSPINH
+        IF (PROFILE) THEN
+           PRINT *, "BLDSPINH, GETDELTASPIN PASSED"
+        ENDIF
      ENDIF
 
      IF (CONTROL .EQ. 1) THEN
         CALL ALLOCATEDIAG
+        IF (PROFILE) THEN
+            PRINT *, "ALLOCATE PASSED"
+        ENDIF
      ELSEIF (CONTROL .EQ. 2 .OR. CONTROL .EQ. 4 .OR. CONTROL .EQ. 5) THEN
         CALL ALLOCATEPURE
      ELSEIF (CONTROL .EQ. 3) THEN
@@ -225,10 +243,18 @@ PROGRAM LATTE
 
      ENDIF
 
-     IF (ELECTRO .EQ. 0) CALL QNEUTRAL(0,1) ! Local charge neutrality
-
-     IF (ELECTRO .EQ. 1) CALL QCONSISTENCY(0,1) ! Self-consistent charges
-
+     IF (ELECTRO .EQ. 0) THEN
+             CALL QNEUTRAL(0,1) ! Local charge neutrality
+             IF (PROFILE) THEN
+                PRINT *, "QNEUTRAL PASSED"
+             ENDIF
+     ENDIF
+     IF (ELECTRO .EQ. 1) THEN
+             CALL QCONSISTENCY(0,1) ! Self-consistent charges
+             IF (PROFILE) THEN
+                PRINT *, "QCONSISTENCY PASSED"
+             ENDIF
+     ENDIF
      ! We have to build our NKTOT complex H matrices and compute the
      ! self consistent density matrix
 
@@ -257,7 +283,12 @@ PROGRAM LATTE
 #elif defined(PROGRESSOFF)
      IF (DFTBU .AND. COMPFORCE.EQ.1) CALL HUBBARDFORCE
 #endif
-     IF (COMPFORCE .EQ. 1) CALL GETFORCE
+     IF (COMPFORCE .EQ. 1) THEN
+             CALL GETFORCE
+             IF (PROFILE) THEN
+                 PRINT *, "GETFORCE PASSED"
+             ENDIF
+     ENDIF
 
      EREP = ZERO
      IF (PPOTON .EQ. 1) THEN
@@ -275,12 +306,16 @@ PROGRAM LATTE
      EPLUSD = ZERO
      IF (PLUSDON .EQ. 1) CALL PAIRPOTPLUSD
 
-
+     
      CALL TOTENG
-
+     IF (PROFILE) THEN
+       PRINT *, "TOTENG PASSED"
+     ENDIF
      ECOUL = ZERO
      IF (ELECTRO .EQ. 1) CALL GETCOULE
-
+     IF (PROFILE) THEN
+        PRINT *, "GETCOULE PASSED"
+     ENDIF
      ESPIN = ZERO
      IF (SPINON .EQ. 1) CALL GETSPINE
 
@@ -315,9 +350,11 @@ PROGRAM LATTE
 #endif
 
      CALL SYSTEM_CLOCK(STOP_CLOCK, CLOCK_RATE, CLOCK_MAX)
-
+     
      CALL GETPRESSURE
-
+     IF (PROFILE) THEN
+        PRINT *, "GETPRESSURE PASSED"
+     ENDIF
 #ifdef DBCSR_ON
 
      IF (CONTROL .EQ. 2 .AND. SPARSEON .EQ. 1 .AND.  MYNODE .EQ. 0) THEN
@@ -327,7 +364,9 @@ PROGRAM LATTE
         IF (MYID .EQ. 0) THEN
            CALL FITTINGOUTPUT(0) ! This has to come first (MJC)
            CALL SUMMARY
-
+           IF (PROFILE) THEN
+              PRINT *, "SUMMARY PASSED"
+           ENDIF
            !     IF (SPINON .EQ. 0) CALL NORMS
 
            PRINT*, "# System time  = ", TARRAY(1)
@@ -348,21 +387,47 @@ PROGRAM LATTE
 
      !     CALL ASSESSOCC
 
-     IF (ELECTRO .EQ. 1) CALL DEALLOCATECOULOMB
-
-     IF (BASISTYPE .EQ. "NONORTHO") CALL DEALLOCATENONO
+     IF (ELECTRO .EQ. 1) THEN
+             CALL DEALLOCATECOULOMB
+             IF (PROFILE) THEN
+                PRINT *, "DEALLOCATECOULOMB PASSED"
+             ENDIF
+     ENDIF
+     IF (BASISTYPE .EQ. "NONORTHO") THEN
+             !CALL DEALLOCATENONO
+             IF (PROFILE) THEN
+                     PRINT *,"DEALLOCATENONO PASSED"
+             ENDIF
+     ENDIF
 
      CALL DEALLOCATENEBARRAYS
-
+     IF (PROFILE) THEN
+          PRINT *, "DEALLOCATENEBARRAYS PASSED"
+     ENDIF
+     
   ELSEIF (MDON .EQ. 1 .AND. RELAXME .EQ. 0) THEN
 
-     IF (BASISTYPE .EQ. "NONORTHO") CALL ALLOCATENONO
+     IF (BASISTYPE .EQ. "NONORTHO") THEN
+             CALL ALLOCATENONO
+             IF (PROFILE) THEN
+                PRINT *, "ALLOCATENONO PASSED"
+             ENDIF
+     ENDIF
 
-     IF (XBOON .EQ. 1) CALL ALLOCATEXBO
+     IF (XBOON .EQ. 1) THEN
+             CALL ALLOCATEXBO
+             IF (PROFILE) THEN
+                PRINT *, "XBOON PASSED"
+             ENDIF
+     ENDIF
 
      IF (ELECTRO .EQ. 1) THEN
         CALL ALLOCATECOULOMB
+
         CALL INITCOULOMB
+        IF (PROFILE) THEN
+           PRINT *, "ALLOCATECOULOMB, INITCOULOMB PASSED"
+        ENDIF
      ENDIF
 
      ! Start the timers
@@ -377,9 +442,13 @@ PROGRAM LATTE
      !
      ! Call TBMD
      !
-
+     IF (PROFILE) THEN
+             PRINT *, "STARTING TBMD"
+     ENDIF
      CALL TBMD
-
+     IF (PROFILE) THEN
+        PRINT *, "TBMD PASSED"
+     ENDIF
 
 #ifdef MPI_ON
      IF (PARREP .EQ. 1) CALL MPI_BARRIER (MPI_COMM_WORLD, IERR )
@@ -453,9 +522,11 @@ PROGRAM LATTE
 #endif
 
   IF(DFTBU) CALL DEALLOCATEDM
-
+  
   CALL DEALLOCATEALL
-
+  IF (PROFILE) THEN
+          PRINT *, "DEALLOCATE PASSED"
+  ENDIF
 #ifdef DBCSR_ON
 
   !ends mpi

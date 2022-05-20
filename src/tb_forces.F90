@@ -32,7 +32,8 @@ SUBROUTINE TBFORCES
   USE DMARRAY
 
   IMPLICIT NONE
-
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   INTEGER :: I, J, K, L, M, N, KK, INDI, INDJ
   INTEGER :: LBRA, MBRA, LKET, MKET
   INTEGER :: PREVJ, NEWJ
@@ -285,6 +286,7 @@ SUBROUTINE TBFORCES
 !$OMP SHARED(DELTASPIN, WSS, WPP, WDD, WFF, SPININDLIST, H2VECT) &
 !$OMP SHARED(HUBBARDU, DELTAQ, COULOMBV, ORBITAL_LIST, CUTOFF_LIST) & 
 !$OMP SHARED(LCNSHIFT) & 
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP SHARED(FPUL, F) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP2, MAGRP, PATH, PHI, ALPHA, BETA, COSBETA) &
@@ -300,7 +302,13 @@ SUBROUTINE TBFORCES
      ! Build list of orbitals on atom I
 
      BASISI(:) = ORBITAL_LIST(:,I)
-
+     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+     ELSE 
+             SPECIFYMBRA = .FALSE. 
+     
+     ENDIF
      INDI = MATINDLIST(I)
 !     IF (SPINON .EQ. 1) SPININDI = SPININDLIST(I)
 
@@ -332,7 +340,12 @@ SUBROUTINE TBFORCES
 
 
            BASISJ(:) = ORBITAL_LIST(:,J)
-
+           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
+                   SPECIFYMBRA= .TRUE. 
+                   MPOINTBRA=0 
+           ELSE 
+                   SPECIFYMBRA = .FALSE. 
+           ENDIF
            INDJ = MATINDLIST(J)
 !           IF (SPINON .EQ. 1) SPININDJ = SPININDLIST(J)
 
@@ -384,8 +397,15 @@ SUBROUTINE TBFORCES
 
               LBRA = BASISI(LBRAINC)
               LBRAINC = LBRAINC + 1
+              ! constrain this loop to m=0 for pz case
 
               DO MBRA = -LBRA, LBRA
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN 
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
 
                  K = K + 1
                  L = INDJ
@@ -395,8 +415,14 @@ SUBROUTINE TBFORCES
 
                     LKET = BASISJ(LKETINC)
                     LKETINC = LKETINC + 1
-
+                    ! constrain this loop to m=0 for pz case
                     DO MKET = -LKET, LKET
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF
 
                        L = L + 1
 

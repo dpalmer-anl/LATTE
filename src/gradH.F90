@@ -30,7 +30,8 @@ SUBROUTINE GRADH
   USE MYPRECISION
 
   IMPLICIT NONE
-
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   INTEGER :: I, J, K, L, M, N, KK, INDI, INDJ
   INTEGER :: LBRA, MBRA, LKET, MKET
   INTEGER :: PREVJ, NEWJ, MP
@@ -57,6 +58,7 @@ SUBROUTINE GRADH
 !$OMP SHARED(CR, BOX, BO, RHOUP, RHODOWN, SPINON) &
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, ORBITAL_LIST, CUTOFF_LIST) &
 !$OMP SHARED(F) &
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP2, MAGRP, PATH, PHI, ALPHA, BETA, COSBETA, FTMP) &
 !$OMP PRIVATE(DC, LBRAINC, LBRA, MBRA, L, LKETINC, LKET, MKET, RHO) &
@@ -68,6 +70,12 @@ SUBROUTINE GRADH
      ! Build list of orbitals on atom I
 
      BASISI(:) = ORBITAL_LIST(:,I)
+     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+     ELSE 
+             SPECIFYMBRA = .FALSE. 
+     ENDIF
 
      INDI = MATINDLIST(I)
 
@@ -97,6 +105,12 @@ SUBROUTINE GRADH
            MAGR = SQRT(MAGR2)
 
            BASISJ(:) = ORBITAL_LIST(:,J)
+           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
+                   SPECIFYMBRA= .TRUE. 
+                   MPOINTBRA=0 
+           ELSE 
+                   SPECIFYMBRA = .FALSE. 
+           ENDIF
 
            INDJ = MATINDLIST(J)
 
@@ -146,9 +160,14 @@ SUBROUTINE GRADH
 
               LBRA = BASISI(LBRAINC)
               LBRAINC = LBRAINC + 1
-
+              ! constrain this loop to m=0 for pz case
               DO MBRA = -LBRA, LBRA
-
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN 
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
                  K = K + 1
                  L = INDJ
 
@@ -157,8 +176,15 @@ SUBROUTINE GRADH
 
                     LKET = BASISJ(LKETINC)
                     LKETINC = LKETINC + 1
+                    ! constrain this loop to m=0 for pz case
 
                     DO MKET = -LKET, LKET
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF
 
                        L = L + 1
 

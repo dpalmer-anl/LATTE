@@ -33,9 +33,12 @@ SUBROUTINE SUMMARY
   USE VIRIALARRAY
   USE NONOARRAY
   USE DMARRAY, ONLY : EHUB
-
+  USE KSPACEARRAY
   IMPLICIT NONE
-
+  INTEGER :: KX, KY, KZ, KCOUNT
+  REAL(LATTEPREC) :: KX0, KY0, KZ0
+  REAL(LATTEPREC) :: B1(3), B2(3), B3(3), A1A2XA3, K0(3)
+  REAL(LATTEPREC) :: KPOINT(3)
   INTEGER :: I, J, INDEX, NUMORB
   REAL(LATTEPREC) :: FDIRAC, SUMQ, ATOMSPIN
   IF (EXISTERROR) RETURN
@@ -255,9 +258,54 @@ SUBROUTINE SUMMARY
 250 FORMAT(3G20.9)
 251 FORMAT(A2,1X,3G20.9)
 
-  IF (KON .EQ. 0) THEN
+  IF (KON .EQ. 1) THEN
+     OPEN(UNIT=12, STATUS="UNKNOWN", FILE="Bands.dat")
+            
+     WRITE(12,*) '("# Eigenvalues") dimension = [Number of orbitals, number of kpoints]'
+     DO I =1, HDIM
+                                     
+         WRITE(12,*) KEVALS(I,:)
+     ENDDO
+     CLOSE(12)
 
-     IF (SPINON .EQ. 0) THEN
+     OPEN(UNIT=50, STATUS="UNKNOWN",FILE="KPOINTS")
+     WRITE(50,*) '("KPOINT" dimension = [NKX*NKY*NKZ , 3])'
+
+     !DEFINE RECIPROCAL LATTICE VECTORS
+     B1(1) = BOX(2,2)*BOX(3,3) - BOX(3,2)*BOX(2,3)
+     B1(2) = BOX(3,1)*BOX(2,3) - BOX(2,1)*BOX(3,3)
+     B1(3) = BOX(2,1)*BOX(3,2) - BOX(3,1)*BOX(2,2)
+
+     A1A2XA3 = BOX(1,1)*B1(1) + BOX(1,2)*B1(2) + BOX(1,3)*B1(3)  
+     B1 = B1/A1A2XA3
+     B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))/A1A2XA3
+     B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))/A1A2XA3
+     B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))/A1A2XA3
+
+     B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))/A1A2XA3
+     B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))/A1A2XA3
+     B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))/A1A2XA3
+ 
+     K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
+         PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
+         PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
+ 
+     DO KX = 1, NKX
+         DO KY = 1, NKY
+              DO KZ = 1 , NKZ
+                 KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
+                          REAL(KY-1)*B2/REAL(NKY) + &
+                           REAL(KZ-1)*B3/REAL(NKZ))+K0
+ 
+                          WRITE(50,*) KPOINT
+              ENDDO
+          ENDDO
+       ENDDO
+      CLOSE(50)
+  !ENDIF
+   
+   
+       IF (SPINON .EQ. 0) THEN
 
         ! Analyse the eigenvalues only if we've used diagonalization
         ! to compute the density matrix
@@ -566,6 +614,9 @@ SUBROUTINE SUMMARY
         SELECT CASE(BASIS(ELEMPOINTER(I)))
 
         CASE("s")
+
+           NUMORB = 1
+        CASE("pz")
 
            NUMORB = 1
 

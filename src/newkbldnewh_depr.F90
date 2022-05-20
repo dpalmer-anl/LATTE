@@ -64,7 +64,12 @@ SUBROUTINE KBLDNEWH
         INDEX = INDEX + 1           
         HK(INDEX, INDEX, 1) = CMPLX(HES(ELEMPOINTER(I)))
 
-     CASE("p")
+      CASE("pz")
+
+        INDEX = INDEX + 1           
+        HK(INDEX, INDEX, 1) = CMPLX(HEP(ELEMPOINTER(I)))
+
+    CASE("p")
 
         DO SUBI = 1, 3
            INDEX = INDEX + 1
@@ -307,6 +312,10 @@ SUBROUTINE KBLDNEWH
      CASE("s")
         BASISI(1) = 0
         BASISI(2) = -1
+     CASE("pz")
+        BASISI(1) = 1
+        BASISI(2) = -1
+
      CASE("p")
         BASISI(1) = 1
         BASISI(2) = -1

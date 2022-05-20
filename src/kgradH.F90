@@ -31,7 +31,8 @@ SUBROUTINE KGRADH
   USE MYPRECISION
 
   IMPLICIT NONE
-
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   INTEGER :: I, J, K, L, M, N, KK, INDI, INDJ
   INTEGER :: LBRA, MBRA, LKET, MKET
   INTEGER :: PREVJ, NEWJ
@@ -87,6 +88,7 @@ SUBROUTINE KGRADH
 !$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB) &
 !$OMP SHARED(CR, BOX, KBO, SPINON) &
 !$OMP SHARED(KRHOUP, KRHODOWN)&  
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, ORBITAL_LIST, CUTOFF_LIST) &
 !$OMP SHARED(K0, B1, B2, B3, NKX, NKY, NKZ, KF) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
@@ -101,6 +103,12 @@ SUBROUTINE KGRADH
      ! Build list of orbitals on atom I
 
      BASISI(:) = ORBITAL_LIST(:,I)
+     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+     ELSE 
+             SPECIFYMBRA = .FALSE. 
+     ENDIF
 
      ! find the right place in the array
 
@@ -134,7 +142,12 @@ SUBROUTINE KGRADH
            !                    IF (MAGR .LT. 2.5) PRINT*, "Short bond"
 
            BASISJ(:) = ORBITAL_LIST(:,J)
-
+           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
+                   SPECIFYMBRA= .TRUE. 
+                   MPOINTBRA=0 
+           ELSE 
+                   SPECIFYMBRA = .FALSE. 
+           ENDIF
            INDJ = MATINDLIST(J)
 
            MAGRP2 = RIJ(1)*RIJ(1) + RIJ(2)*RIJ(2)
@@ -182,8 +195,15 @@ SUBROUTINE KGRADH
 
               LBRA = BASISI(LBRAINC)
               LBRAINC = LBRAINC + 1
+              ! constrain this loop to m=0 for pz case
 
               DO MBRA = -LBRA, LBRA
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN 
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
 
                  K = K + 1
                  L = INDJ
@@ -193,9 +213,14 @@ SUBROUTINE KGRADH
 
                     LKET = BASISJ(LKETINC)
                     LKETINC = LKETINC + 1
-
+                    ! constrain this loop to m=0 for pz case
                     DO MKET = -LKET, LKET
-
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF
                        L = L + 1
 
                        IF (.NOT. PATH) THEN

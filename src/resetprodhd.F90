@@ -62,6 +62,8 @@ SUBROUTINE RESETPRODHD
 
            CASE("s")
               NUMORB = 1
+           CASE("pz")
+              NUMORB = 1
            CASE("p")
               NUMORB = 3
            CASE("d")

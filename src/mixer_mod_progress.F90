@@ -992,6 +992,10 @@ CONTAINS
           CASE("s")
 
              NUMORB = 1
+          CASE("pz")
+
+             NUMORB = 1
+
 
           CASE("p")
 
