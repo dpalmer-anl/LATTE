@@ -126,10 +126,10 @@ SUBROUTINE BLDNEWHS
 
            BASISJ(:) = ORBITAL_LIST(:,J)
            IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN
-              SPECIFYMBRA= .TRUE. 
-              MPOINTBRA=0
+              SPECIFYMKET= .TRUE. 
+              MPOINTKET=0
            ELSE
-              SPECIFYMBRA = .FALSE.
+              SPECIFYMKET = .FALSE.
            ENDIF
             
            INDJ = MATINDLIST(J)
@@ -226,7 +226,7 @@ SUBROUTINE BLDNEWHS
                           ! again later if we're building the S matrix too
                        
                        MYANGFACTOR = ANGFACTOR(LBRA, LKET, MBRA, MKET, 0, ALPHA, COSBETA)
-
+                        
                        H(IBRA, IKET) = H(IBRA, IKET) + MYANGFACTOR * &
                             MYBONDINT(0)
                        
