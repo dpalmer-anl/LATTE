@@ -341,10 +341,10 @@ SUBROUTINE TBFORCES
 
            BASISJ(:) = ORBITAL_LIST(:,J)
            IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
-                   SPECIFYMBRA= .TRUE. 
-                   MPOINTBRA=0 
+                   SPECIFYMKET= .TRUE. 
+                   MPOINTKET=0 
            ELSE 
-                   SPECIFYMBRA = .FALSE. 
+                   SPECIFYMKET = .FALSE. 
            ENDIF
            INDJ = MATINDLIST(J)
 !           IF (SPINON .EQ. 1) SPININDJ = SPININDLIST(J)
@@ -406,6 +406,7 @@ SUBROUTINE TBFORCES
                                  EXIT 
                          ENDIF 
                  ENDIF
+                 
 
                  K = K + 1
                  L = INDJ
@@ -423,7 +424,7 @@ SUBROUTINE TBFORCES
                                        EXIT 
                                ENDIF 
                        ENDIF
-
+                        
                        L = L + 1
 
                        SELECT CASE(SPINON)
