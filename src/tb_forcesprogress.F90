@@ -233,13 +233,7 @@ SUBROUTINE TBFORCESPROGRESS
 
      ! Build list of orbitals on atom I
 
-     BASISI(:) = ORBITAL_LIST(:,I)
-     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
-             SPECIFYMBRA= .TRUE. 
-             MPOINTBRA=0 
-     ELSE 
-             SPECIFYMBRA = .FALSE. 
-     ENDIF
+     
      INDI = MATINDLIST(I)
 !     IF (SPINON .EQ. 1) SPININDI = SPININDLIST(I)
 
@@ -270,13 +264,6 @@ SUBROUTINE TBFORCESPROGRESS
            MAGR = SQRT(MAGR2)
 
 
-           BASISJ(:) = ORBITAL_LIST(:,J)
-           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
-                   SPECIFYMBRA= .TRUE. 
-                   MPOINTBRA=0 
-           ELSE 
-                   SPECIFYMBRA = .FALSE. 
-           ENDIF
            INDJ = MATINDLIST(J)
 !           IF (SPINON .EQ. 1) SPININDJ = SPININDLIST(J)
 
@@ -309,7 +296,7 @@ SUBROUTINE TBFORCESPROGRESS
 
            COSBETA = RIJ(3)/MAGR
            BETA = ACOS(RIJ(3) / MAGR) 
-
+           
            DC = RIJ/MAGR
 
            ! build forces using PRB 72 165107 eq. (12) - the sign of the
@@ -324,6 +311,13 @@ SUBROUTINE TBFORCESPROGRESS
            K = INDI
 
            LBRAINC = 1
+           BASISI(:) = ORBITAL_LIST(:,I)
+           IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+           ELSE 
+             SPECIFYMBRA = .FALSE. 
+           ENDIF
            DO WHILE (BASISI(LBRAINC) .NE. -1)
 
               LBRA = BASISI(LBRAINC)
@@ -342,6 +336,14 @@ SUBROUTINE TBFORCESPROGRESS
                  L = INDJ
 
                  LKETINC = 1
+                 BASISJ(:) = ORBITAL_LIST(:,J)
+                 IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
+                   SPECIFYMKET= .TRUE. 
+                   MPOINTKET=0 
+                 ELSE 
+                   SPECIFYMKET = .FALSE. 
+                 ENDIF
+                 
                  DO WHILE (BASISJ(LKETINC) .NE. -1)
 
                     LKET = BASISJ(LKETINC)
@@ -379,7 +381,7 @@ SUBROUTINE TBFORCESPROGRESS
                           !
                           ! d/d_alpha
                           !
-                          
+                                           
                           FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
                                (-RIJ(2) / MAGRP2 * MYDFDA)
 
@@ -436,7 +438,7 @@ SUBROUTINE TBFORCESPROGRESS
                           FTMP_PULAY(2) = FTMP_PULAY(2) + X2HRHO(L, K) * &
                                (((((RIJ(3) * RIJ(2)) / &
                                MAGR2)) / MAGRP) * SMYDFDB)
-                               
+                              
                           FTMP_PULAY(3) = FTMP_PULAY(3) - X2HRHO(L, K) * &
                                (((ONE - ((RIJ(3) * RIJ(3)) / &
                                MAGR2)) / MAGRP) * SMYDFDB)
@@ -474,7 +476,7 @@ SUBROUTINE TBFORCESPROGRESS
                           !
                           ! d/dR
                           !
-
+                          
                           FTMP_BOND(1) = FTMP_BOND(1) - RHO * DC(1) * &
                                MYDFDR
 
@@ -575,7 +577,7 @@ SUBROUTINE TBFORCESPROGRESS
                  ENDDO
               ENDDO
            ENDDO
-
+           
            F(1,I) = F(1,I) + TWO*FTMP_BOND(1)
            F(2,I) = F(2,I) + TWO*FTMP_BOND(2)
            F(3,I) = F(3,I) + TWO*FTMP_BOND(3)
@@ -664,9 +666,10 @@ SUBROUTINE TBFORCESPROGRESS
   ! ZY, the sign is different from prevous pulay_sp
   VIRPUL = - VIRPUL
 
-  !  DO I= 1, NATS
-  !     WRITE(6,10) I, FPUL(1,I), FPUL(2,I), FPUL(3,I)
-  !  ENDDO
+  DO I= 1, NATS
+     PRINT *,"FX ", F(1,I), "FY ", F(2,I),"FZ ",F(3,I)
+     PRINT *, "FpulX",FPUL(1,I), "FpulY",FPUL(2,I), "FpulZ",FPUL(3,I)
+  ENDDO
 
   !10 FORMAT(I4, 3F12.6)
 

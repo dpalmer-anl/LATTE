@@ -475,7 +475,7 @@ CONTAINS
           FTOT = TWO * F
 
        ENDIF
-
+       
        EREP = ZERO
        IF (PPOTON .EQ. 1) THEN
           CALL PAIRPOT
@@ -756,7 +756,7 @@ CONTAINS
 
        LIBINIT = .TRUE.
        NEWSYSTEM = 0 !Setting newsystem back to 0.
-
+      
 #ifdef PROGRESSON
        IF(MOD(LIBCALLS,WRTFREQ) == 0)THEN
           IF(VERBOSE >= 1) THEN
@@ -782,6 +782,9 @@ CONTAINS
                   &BOX(2,1),BOX(2,2),BOX(2,3),BOX(3,1),BOX(3,2),BOX(3,3),'"',&
                   &"Properties=species:S:1:pos:R:3:vel:R:3:for:R:3:cha:R:1  Time=",LIBCALLS*DT_IN
              DO I=1,NATS
+                FTOT(1,I)=0
+                FTOT(2,I)=0
+                FTOT(3,I)=0
                 WRITE(20,*)ATELE(I),CR(1,I),CR(2,I),CR(3,I),V(1,I),V(2,I),V(3,I),&
                      &FTOT(1,I),FTOT(2,I),FTOT(3,I),-DELTAQ(I)
              ENDDO
@@ -803,6 +806,9 @@ CONTAINS
                   &BOX(2,1),BOX(2,2),BOX(2,3),BOX(3,1),BOX(3,2),BOX(3,3),'"',&
                   &"Properties=species:S:1:pos:R:3:vel:R:3:for:R:3:cha:R:1  Time=",LIBCALLS*DT_IN
              DO I=1,NATS
+                FTOT(1,I)=0
+                FTOT(2,I)=0
+                FTOT(3,I)=0
                 WRITE(20,*)ATELE(I),CR(1,I),CR(2,I),CR(3,I),V(1,I),V(2,I),V(3,I),&
                      &FTOT(1,I),FTOT(2,I),FTOT(3,I),-DELTAQ(I)
              ENDDO

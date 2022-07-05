@@ -242,6 +242,12 @@ SUBROUTINE BLDNEWHS
                        ! everything else
                        
                        DO MP = 1, MIN(LBRA, LKET)
+                          IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                          ENDIF
 
                           MYANGFACTOR = ANGFACTOR(LBRA, LKET, MBRA, MKET, MP, ALPHA, COSBETA)
                           

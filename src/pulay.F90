@@ -45,7 +45,8 @@ SUBROUTINE PULAY
   REAL(LATTEPREC) :: MAXRCUT, MAXRCUT2
   REAL(LATTEPREC) :: WSPINI, WSPINJ
   REAL(LATTEPREC) :: MYDFDA, MYDFDB, MYDFDR, RCUTTB
-  
+  INTEGER :: MPOINTBRA,MPOINTKET
+  LOGICAL :: SPECIFYMBRA,SPECIFYMKET
   REAL(LATTEPREC), EXTERNAL :: DFDA, DFDB, DFDR
   LOGICAL PATH
   IF (EXISTERROR) RETURN
@@ -282,6 +283,7 @@ SUBROUTINE PULAY
 !$OMP SHARED(HUBBARDU, DELTAQ, COULOMBV) & 
 !$OMP SHARED(LCNSHIFT) & 
 !$OMP SHARED(FPUL) &
+!$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP2, MAGRP, PATH, PHI, ALPHA, BETA, COSBETA) &
 !$OMP PRIVATE(FTMP_PULAY, FTMP_COUL, FTMP_SPIN) &
@@ -293,11 +295,19 @@ SUBROUTINE PULAY
   DO I = 1, NATS
 
      ! Build list of orbitals on atom I
+     SPECIFYMBRA=.FALSE.
      SELECT CASE(BASIS(ELEMPOINTER(I)))
-
+     
      CASE("s")
         BASISI(1) = 0
         BASISI(2) = -1
+
+     CASE("pz")
+        BASISI(1) = 1
+        BASISI(2) = -1
+        SPECIFYMBRA =.TRUE.
+        MPOINTBRA = 0
+
      CASE("p")
         BASISI(1) = 1
         BASISI(2) = -1
@@ -401,11 +411,17 @@ SUBROUTINE PULAY
            MAGR = SQRT(MAGR2)
 
            ! Build list of orbitals on atom J
-
+           SPECIFYMKET=.FALSE. 
            SELECT CASE(BASIS(ELEMPOINTER(J)))
+           
            CASE("s")
               BASISJ(1) = 0
               BASISJ(2) = -1
+           CASE("pz")
+              BASISJ(1) = 1
+              BASISJ(2) = -1
+              SPECIFYMKET = .TRUE.
+              MPOINTKET=0
            CASE("p")
               BASISJ(1) = 1
               BASISJ(2) = -1
@@ -513,13 +529,19 @@ SUBROUTINE PULAY
            K = INDI
 
            LBRAINC = 1
+            
            DO WHILE (BASISI(LBRAINC) .NE. -1)
 
               LBRA = BASISI(LBRAINC)
               LBRAINC = LBRAINC + 1
 
               DO MBRA = -LBRA, LBRA
-
+                 IF (SPECIFYMBRA) THEN 
+                         IF (MBRA .NE. MPOINTBRA) THEN 
+                                 CYCLE 
+                                 EXIT 
+                         ENDIF 
+                 ENDIF
                  K = K + 1
                  L = INDJ
 
@@ -530,6 +552,13 @@ SUBROUTINE PULAY
                     LKETINC = LKETINC + 1
 
                     DO MKET = -LKET, LKET
+                       IF (SPECIFYMKET) THEN  
+                               IF (MKET .NE. MPOINTKET) THEN 
+                                       CYCLE 
+                                       EXIT 
+                               ENDIF 
+                       ENDIF
+
 
                        L = L + 1
 

@@ -424,7 +424,7 @@ SUBROUTINE TBFORCES
                                        EXIT 
                                ENDIF 
                        ENDIF
-                        
+                       PRINT *, "MBRA ", MBRA, "MKET ", MKET  
                        L = L + 1
 
                        SELECT CASE(SPINON)
