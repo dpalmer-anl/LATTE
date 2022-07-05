@@ -212,14 +212,7 @@ SUBROUTINE KTBFORCES
 
      ! Build list of orbitals on atom I
      
-     BASISI(:) = ORBITAL_LIST(:,I)
-     IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
-             SPECIFYMBRA= .TRUE. 
-             MPOINTBRA=0 
-     ELSE 
-             SPECIFYMBRA = .FALSE. 
-     ENDIF
-     INDI = MATINDLIST(I)
+          INDI = MATINDLIST(I)
 
      DO NEWJ = 1, TOTNEBTB(I)
 
@@ -249,13 +242,7 @@ SUBROUTINE KTBFORCES
 
            ! Build list of orbitals on atom J
 
-           BASISJ(:) = ORBITAL_LIST(:,J)
-           IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
-                   SPECIFYMBRA= .TRUE. 
-                   MPOINTBRA=0 
-           ELSE 
-                   SPECIFYMBRA = .FALSE. 
-           ENDIF
+           
            INDJ = MATINDLIST(J)
 
            MAGRP2 = RIJ(1)*RIJ(1) + RIJ(2)*RIJ(2)
@@ -302,6 +289,14 @@ SUBROUTINE KTBFORCES
            K = INDI
 
            LBRAINC = 1
+           BASISI(:) = ORBITAL_LIST(:,I)
+           IF (BASIS(ELEMPOINTER(I)) .EQ. "pz") THEN 
+             SPECIFYMBRA= .TRUE. 
+             MPOINTBRA=0 
+           ELSE 
+             SPECIFYMBRA = .FALSE. 
+           ENDIF
+
            DO WHILE (BASISI(LBRAINC) .NE. -1)
 
               LBRA = BASISI(LBRAINC)
@@ -319,6 +314,13 @@ SUBROUTINE KTBFORCES
                  L = INDJ
 
                  LKETINC = 1
+                 BASISJ(:) = ORBITAL_LIST(:,J)
+                 IF (BASIS(ELEMPOINTER(J)) .EQ. "pz") THEN 
+                   SPECIFYMKET= .TRUE. 
+                   MPOINTKET=0 
+                 ELSE 
+                   SPECIFYMKET = .FALSE. 
+                 ENDIF
                  DO WHILE (BASISJ(LKETINC) .NE. -1)
 
                     LKET = BASISJ(LKETINC)
