@@ -666,10 +666,10 @@ SUBROUTINE TBFORCESPROGRESS
   ! ZY, the sign is different from prevous pulay_sp
   VIRPUL = - VIRPUL
 
-  DO I= 1, NATS
-     PRINT *,"FX ", F(1,I), "FY ", F(2,I),"FZ ",F(3,I)
-     PRINT *, "FpulX",FPUL(1,I), "FpulY",FPUL(2,I), "FpulZ",FPUL(3,I)
-  ENDDO
+  !DO I= 1, NATS
+  !   PRINT *,"FX ", F(1,I), "FY ", F(2,I),"FZ ",F(3,I)
+  !   PRINT *, "FpulX",FPUL(1,I), "FpulY",FPUL(2,I), "FpulZ",FPUL(3,I)
+  !ENDDO
 
   !10 FORMAT(I4, 3F12.6)
 
