@@ -15,8 +15,8 @@ RANLIB = /usr/bin/ranlib
 
 # Use PROGRESS and BML libraries
 PROGRESS = ON
-PROGRESS_PATH= $(PROGRESS_DIR)/install/lib
-BML_PATH= $(BML_DIR)/install/lib
+PROGRESS_PATH= ${PROGRESS_DIR}/install/lib
+BML_PATH= ${BML_DIR}/install/lib
 
 # Use METIS library for graph partitioning
 METIS = OFF

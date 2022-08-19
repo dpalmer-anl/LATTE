@@ -112,11 +112,14 @@ SUBROUTINE KBLDNEWH
 
   ENDIF
 
-  !K0 = PI*KSHIFT
-
-  K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
-       PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
-       PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
+  K0 = KSHIFT(1)*B1 + KSHIFT(2)*B2 + KSHIFT(3)*B3
+  PRINT*, K0
+  !K0 = (KSHIFT*B1 + &
+  !     KSHIFT*B2 + &
+  !     KSHIFT*B3) 
+  !K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
+  !     PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
+  !     PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
 
 !$OMP PARALLEL DO DEFAULT (NONE) & 
 !$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB, ORBITAL_LIST, CUTOFF_LIST) &    
@@ -300,11 +303,11 @@ SUBROUTINE KBLDNEWH
 
                              DO KZ = 1, NKZ
 
-                                KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
+                                KPOINT = (REAL(KX-1)*B1/REAL(NKX) + &
                                      REAL(KY-1)*B2/REAL(NKY) + &
                                      REAL(KZ-1)*B3/REAL(NKZ)) + K0
 
-!                                print*, kx, ky, kz, kpoint
+                                !PRINT*, KPOINT
 
                                 !KPOINT = K0 !ZERO
                                 !KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
