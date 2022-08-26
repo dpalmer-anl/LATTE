@@ -58,7 +58,7 @@ SUBROUTINE KBLDNEWH
   HK = CMPLX(ZERO)
 
   ! Computing the reciprocal lattice vectors
-
+  
   B1(1) = BOX(2,2)*BOX(3,3) - BOX(3,2)*BOX(2,3)
   B1(2) = BOX(3,1)*BOX(2,3) - BOX(2,1)*BOX(3,3)
   B1(3) = BOX(2,1)*BOX(3,2) - BOX(3,1)*BOX(2,2)
@@ -71,19 +71,19 @@ SUBROUTINE KBLDNEWH
 
   ! B2 = (A3 x A1)/(A1(A2 X A3))
 
-  B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))/A1A2XA3
-  B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))/A1A2XA3
-  B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))/A1A2XA3
+  B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))
+  B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))
+  B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))
 
-  B2 = TWO*PI*B2
+  B2 = TWO*PI*B2/A1A2XA3
 
   ! B3 = (A1 x A2)/(A1(A2 X A3))
 
-  B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))/A1A2XA3
-  B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))/A1A2XA3
-  B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))/A1A2XA3
+  B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))
+  B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))
+  B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))
 
-  B3 = TWO*PI*B3
+  B3 = TWO*PI*B3/A1A2XA3
 
   INDEX = 0
 
@@ -113,7 +113,7 @@ SUBROUTINE KBLDNEWH
   ENDIF
 
   K0 = KSHIFT(1)*B1 + KSHIFT(2)*B2 + KSHIFT(3)*B3
-  PRINT*, K0
+   
   !K0 = (KSHIFT*B1 + &
   !     KSHIFT*B2 + &
   !     KSHIFT*B3) 

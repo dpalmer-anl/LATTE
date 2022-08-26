@@ -285,19 +285,19 @@ SUBROUTINE SUMMARY
 
      ! B2 = (A3 x A1)/(A1(A2 X A3))
 
-     B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))/A1A2XA3
-     B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))/A1A2XA3
-     B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))/A1A2XA3
+     B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))
+     B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))
+     B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))
 
-     B2 = TWO*PI*B2
+     B2 = TWO*PI*B2/A1A2XA3
 
      ! B3 = (A1 x A2)/(A1(A2 X A3))
 
-     B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))/A1A2XA3
-     B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))/A1A2XA3
-     B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))/A1A2XA3
+     B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))
+     B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))
+     B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))
 
-     B3 = TWO*PI*B3
+     B3 = TWO*PI*B3/A1A2XA3
      !K0 = PI*(ONE - REAL(NKX))/(REAL(NKX))*B1 + &
      !    PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
      !    PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
