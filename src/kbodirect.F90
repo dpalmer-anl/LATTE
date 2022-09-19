@@ -73,7 +73,7 @@ SUBROUTINE KBOEVECS
   ! potential to obtain the correct occupation
   !
 
-  IF (KBT .GT. 0.001) THEN  ! This bit is for a finite electronic temperature
+  IF (KBT .GT. 0.0001) THEN  ! This bit is for a finite electronic temperature
 
      DO WHILE (ABS(OCCERROR) .GT. BREAKTOL .AND. ITER .LT. 100)
 

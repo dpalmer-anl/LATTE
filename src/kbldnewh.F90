@@ -326,9 +326,11 @@ SUBROUTINE KBLDNEWH
                                      BLOCH*KHTMP
 
                                 IF (BASISTYPE .EQ. "NONORTHO") THEN
+                                   
                                    SK(IBRA, IKET, KCOUNT) = &
                                         SK(IBRA, IKET, KCOUNT) + &
                                         BLOCH*KSTMP
+                                   
                                 ENDIF
 
                              ENDDO
