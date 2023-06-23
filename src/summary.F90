@@ -320,7 +320,7 @@ SUBROUTINE SUMMARY
        ENDDO
       CLOSE(50)
   !ENDIF
-   
+  RETURN 
    
        IF (SPINON .EQ. 0) THEN
 
