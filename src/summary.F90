@@ -302,22 +302,30 @@ SUBROUTINE SUMMARY
      !    PI*(ONE - REAL(NKY))/(REAL(NKY))*B2 + &
      !    PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
      !K0 = KSHIFT(1)*B1 + KSHIFT(2)*B2 + KSHIFT(3)*B3
-     K0 = KSHIFT 
-     DO KX = 1, NKX
-         DO KY = 1, NKY
-              DO KZ = 1 , NKZ
+     DO KCOUNT =1 ,NKLOCAL
+        KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+        KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+        KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+        KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
+        WRITE(50,*) KPOINT
+     ENDDO
+
+     !K0 = KSHIFT 
+     !DO KX = 1, NKX
+     !    DO KY = 1, NKY
+     !         DO KZ = 1 , NKZ
                       !KPOINT = (REAL(KX-1)*B1/REAL(NKX) + &
                        !         REAL(KY-1)*B2/REAL(NKY) + &
                        !         REAL(KZ-1)*B3/REAL(NKZ)) + K0
-                      KPOINT = (REAL(KX-1)/REAL(NKX) + &
-                                REAL(KY-1)/REAL(NKY) + &
-                                REAL(KZ-1)/REAL(NKZ)) + K0
+     !                 KPOINT = (REAL(KX-1)/REAL(NKX) + &
+     !                           REAL(KY-1)/REAL(NKY) + &
+     !                           REAL(KZ-1)/REAL(NKZ)) + K0
 
 
-                      WRITE(50,*) KPOINT
-              ENDDO
-          ENDDO
-       ENDDO
+     !                 WRITE(50,*) KPOINT
+     !         ENDDO
+     !     ENDDO
+     !  ENDDO
       CLOSE(50)
   !ENDIF
   RETURN 

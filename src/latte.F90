@@ -52,10 +52,12 @@ PROGRAM LATTE
 
   IMPLICIT NONE
 
-  INTEGER :: I, J
+  INTEGER :: I, J, KX,KY,KZ,KCOUNT
   INTEGER :: START_CLOCK, STOP_CLOCK, CLOCK_RATE, CLOCK_MAX
   INTEGER :: MYID = 0
   REAL :: TARRAY(2), RESULT, SYSTDIAG, SYSTPURE
+  !REAL(LATTEPREC), ALLOCATABLE :: KPOINT_LIST(:,:)
+  REAL(LATTEPREC) :: B1(3), B2(3), B3(3), A1A2XA3, K0(3), KPOINT(3)
   CHARACTER(LEN=50) :: FLNM
   LOGICAL :: PROFILE
 #ifdef MPI_ON
@@ -196,6 +198,29 @@ PROGRAM LATTE
         !ENDIF
 
      ELSE
+        KCOUNT = 0
+        
+        DO KX = 1, NKX
+        
+           DO KY = 1, NKY
+        
+              DO KZ = 1, NKZ
+        
+                 KPOINT = ZERO
+                 KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+                 KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+                 KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+        
+                 KCOUNT = KCOUNT+1
+                 KPOINT_LIST(KCOUNT,1) = KPOINT(1)
+                 KPOINT_LIST(KCOUNT,2) = KPOINT(2)
+                 KPOINT_LIST(KCOUNT,3) = KPOINT(3)
+
+             ENDDO
+          ENDDO
+        ENDDO
+        NKTOT = KCOUNT
+        NKLOCAL = NKTOT
 
         CALL KBLDNEWH
         IF (PROFILE) THEN

@@ -88,8 +88,8 @@ SUBROUTINE KBLDNEWH
   INDEX = 0
 
   ! Build diagonal elements (pre-calculated)
-
-  DO K = 1, NKTOT
+  NKLOCAL = SIZE(KPOINT_LIST, DIM=1)
+  DO K = 1, NKLOCAL    
      DO I = 1, HDIM
         
         HK(I, I, K) = CMPLX(H_ONSITE(I))
@@ -122,9 +122,9 @@ SUBROUTINE KBLDNEWH
   !     PI*(ONE - REAL(NKZ))/(REAL(NKZ))*B3 - PI*KSHIFT
 
 !$OMP PARALLEL DO DEFAULT (NONE) & 
-!$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB, ORBITAL_LIST, CUTOFF_LIST) &    
+!$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB, ORBITAL_LIST, CUTOFF_LIST,KPOINT_LIST) &    
 !$OMP SHARED(CR, BOX, B1, B2, B3, HK, SK) &  
-!$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, K0, NKX, NKY, NKZ) &
+!$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, K0, NKX, NKY, NKZ,NKTOT,NKLOCAL) &
 !$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP, PHI, ALPHA, BETA, COSBETA) &
@@ -293,19 +293,44 @@ SUBROUTINE KBLDNEWH
                           
                        ENDIF
 
-                       KCOUNT = 0
+                       !KCOUNT = 0
 
                        !Loop over k-points
+                       DO KCOUNT =1 ,NKLOCAL
+                          KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                          KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                          KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+                          KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
 
-                       DO KX = 1, NKX
+                          KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                          KPOINT(3)*RIJ(3)
+                                
+                          BLOCH = EXP(CMPLX(ZERO,KDOTL))
+                                
+                          HK(IBRA, IKET, KCOUNT) = &
+                                 HK(IBRA, IKET, KCOUNT) + &
+                                 BLOCH*KHTMP
 
-                          DO KY = 1, NKY
+                          IF (BASISTYPE .EQ. "NONORTHO") THEN
+                             
+                             SK(IBRA, IKET, KCOUNT) = &
+                                  SK(IBRA, IKET, KCOUNT) + &
+                                  BLOCH*KSTMP
+                             
+                          ENDIF
 
-                             DO KZ = 1, NKZ
+                       ENDDO
 
-                                KPOINT = (REAL(KX-1)*B1/REAL(NKX) + &
-                                     REAL(KY-1)*B2/REAL(NKY) + &
-                                     REAL(KZ-1)*B3/REAL(NKZ)) + K0
+
+                       !DO KX = 1, NKX
+
+                       !  DO KY = 1, NKY
+
+                       !      DO KZ = 1, NKZ
+
+                       !         KPOINT = (REAL(KX-1)*B1/REAL(NKX) + &
+                       !              REAL(KY-1)*B2/REAL(NKY) + &
+                       !              REAL(KZ-1)*B3/REAL(NKZ)) + K0
 
                                 !PRINT*, KPOINT
 
@@ -314,28 +339,28 @@ SUBROUTINE KBLDNEWH
                                 !KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
                                 !KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
                                 
-                                KCOUNT = KCOUNT+1
+                        !        KCOUNT = KCOUNT+1
                                 
-                                KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
-                                     KPOINT(3)*RIJ(3)
+                        !        KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                        !             KPOINT(3)*RIJ(3)
                                 
-                                BLOCH = EXP(CMPLX(ZERO,KDOTL))
+                        !        BLOCH = EXP(CMPLX(ZERO,KDOTL))
                                 
-                                HK(IBRA, IKET, KCOUNT) = &
-                                     HK(IBRA, IKET, KCOUNT) + &
-                                     BLOCH*KHTMP
+                        !        HK(IBRA, IKET, KCOUNT) = &
+                        !             HK(IBRA, IKET, KCOUNT) + &
+                        !             BLOCH*KHTMP
 
-                                IF (BASISTYPE .EQ. "NONORTHO") THEN
+                        !        IF (BASISTYPE .EQ. "NONORTHO") THEN
                                    
-                                   SK(IBRA, IKET, KCOUNT) = &
-                                        SK(IBRA, IKET, KCOUNT) + &
-                                        BLOCH*KSTMP
-                                   
-                                ENDIF
+                        !           SK(IBRA, IKET, KCOUNT) = &
+                        !                SK(IBRA, IKET, KCOUNT) + &
+                        !                BLOCH*KSTMP
+                        !           
+                        !        ENDIF
 
-                             ENDDO
-                          ENDDO
-                       ENDDO
+                        !     ENDDO
+                        !  ENDDO
+                       !ENDDO
 
 
                        ! everything else
@@ -354,40 +379,65 @@ SUBROUTINE KBLDNEWH
                              
                           ENDIF
 
-                          KCOUNT = 0
+                          !KCOUNT = 0
+                          DO KCOUNT =1 ,NKLOCAL
+                             KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                             KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                             KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+                             KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
+                             
+                             KDOTL = KPOINT(1)*RIJ(1) + &
+                             KPOINT(2)*RIJ(2) + KPOINT(3)*RIJ(3)
 
-                          DO KX = 1, NKX
-                             DO KY = 1, NKY
-                                DO KZ = 1, NKZ
+                             BLOCH = EXP(CMPLX(ZERO,KDOTL))
+
+                             HK(IBRA, IKET, KCOUNT) = &
+                                  HK(IBRA, IKET, KCOUNT) + &
+                                  BLOCH*KHTMP
+
+                             IF (BASISTYPE .EQ. "NONORTHO") THEN
+                                SK(IBRA, IKET, KCOUNT) = &
+                                     SK(IBRA, IKET, KCOUNT) + &
+                                     BLOCH*KSTMP
+                             ENDIF
+
+                          ENDDO
+
+
+
+
+                          !DO KX = 1, NKX
+                          !   DO KY = 1, NKY
+                          !      DO KZ = 1, NKZ
 
                                    !KPOINT = ZERO
                                    !KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
                                    !KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
                                    !KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-                                   KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
-                                            REAL(KY-1)*B2/REAL(NKY) + &
-                                            REAL(KZ-1)*B3/REAL(NKZ)) + K0
+                          !         KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
+                          !                  REAL(KY-1)*B2/REAL(NKY) + &
+                          !                  REAL(KZ-1)*B3/REAL(NKZ)) + K0
 
-                                   KCOUNT = KCOUNT+1
+                          !         KCOUNT = KCOUNT+1
 
-                                   KDOTL = KPOINT(1)*RIJ(1) + &
-                                        KPOINT(2)*RIJ(2) + KPOINT(3)*RIJ(3)
+                          !        KDOTL = KPOINT(1)*RIJ(1) + &
+                          !             KPOINT(2)*RIJ(2) + KPOINT(3)*RIJ(3)
 
-                                   BLOCH = EXP(CMPLX(ZERO,KDOTL))
+                          !         BLOCH = EXP(CMPLX(ZERO,KDOTL))
 
-                                   HK(IBRA, IKET, KCOUNT) = &
-                                        HK(IBRA, IKET, KCOUNT) + &
-                                        BLOCH*KHTMP
+                          !         HK(IBRA, IKET, KCOUNT) = &
+                          !              HK(IBRA, IKET, KCOUNT) + &
+                          !              BLOCH*KHTMP
 
-                                   IF (BASISTYPE .EQ. "NONORTHO") THEN
-                                      SK(IBRA, IKET, KCOUNT) = &
-                                           SK(IBRA, IKET, KCOUNT) + &
-                                           BLOCH*KSTMP
-                                   ENDIF
+                          !         IF (BASISTYPE .EQ. "NONORTHO") THEN
+                          !            SK(IBRA, IKET, KCOUNT) = &
+                          !                 SK(IBRA, IKET, KCOUNT) + &
+                          !                 BLOCH*KSTMP
+                          !         ENDIF
 
-                                ENDDO
-                             ENDDO
-                          ENDDO
+                          !      ENDDO
+                          !   ENDDO
+                          !ENDDO
 
                        ENDDO
 

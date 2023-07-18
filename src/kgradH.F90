@@ -86,7 +86,7 @@ SUBROUTINE KGRADH
 
 !$OMP PARALLEL DO DEFAULT (NONE) &
 !$OMP SHARED(NATS, BASIS, ELEMPOINTER, TOTNEBTB, NEBTB) &
-!$OMP SHARED(CR, BOX, KBO, SPINON) &
+!$OMP SHARED(CR, BOX, KBO, SPINON,KPOINT_LIST,NKTOT,NKLOCAL) &
 !$OMP SHARED(KRHOUP, KRHODOWN)&  
 !$OMP PRIVATE(MPOINTBRA,MPOINTKET,SPECIFYMBRA,SPECIFYMKET) &
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, ORBITAL_LIST, CUTOFF_LIST) &
@@ -238,74 +238,131 @@ SUBROUTINE KGRADH
                           ! d/d_alpha
                           !
 
-                          KCOUNT = 0
+                          !KCOUNT = 0
+                          DO KCOUNT =1 ,NKLOCAL
+                               KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                               KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                               KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+                               KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
 
-                          DO KX = 1, NKX
+                               KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                                    KPOINT(3)*RIJ(3)
 
-                             DO KY = 1, NKY
+                               CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
 
-                                DO KZ = 1, NKZ
-
-                                   KPOINT = ZERO
-                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-
-                                   KCOUNT = KCOUNT+1
-
-                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
-                                        KPOINT(3)*RIJ(3)
-
-                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
-
-                                   SELECT CASE(SPINON)
-                                   CASE(0)
-                                      RHO = KBO(K,L, KCOUNT)
-                                   CASE(1)
-                                      RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
-                                   END SELECT
+                               SELECT CASE(SPINON)
+                               CASE(0)
+                                  RHO = KBO(K,L, KCOUNT)
+                               CASE(1)
+                                  RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
+                               END SELECT
 
 
 
-                                   FTMP(1) = FTMP(1) + RHO * &
-                                        (-RIJ(2) / MAGRP2 * MYDFDA)*CONJGBLOCH
+                               FTMP(1) = FTMP(1) + RHO * &
+                                    (-RIJ(2) / MAGRP2 * MYDFDA)*CONJGBLOCH
 
-                                   FTMP(2) = FTMP(2) + RHO * &
-                                        (RIJ(1)/ MAGRP2 * MYDFDA)*CONJGBLOCH
+                               FTMP(2) = FTMP(2) + RHO * &
+                                    (RIJ(1)/ MAGRP2 * MYDFDA)*CONJGBLOCH
+
+                               !
+                               ! d/d_beta
+                               !
+
+                               FTMP(1) = FTMP(1) + RHO * &
+                                    (((((RIJ(3) * RIJ(1)) / &
+                                    MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+
+                               FTMP(2) = FTMP(2) + RHO * &
+                                    (((((RIJ(3) * RIJ(2)) / &
+                                    MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+
+                               FTMP(3) = FTMP(3) - RHO * &
+                                    (((ONE - ((RIJ(3) * RIJ(3)) / &
+                                    MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+
+                               !
+                               ! d/dR
+                               !
+
+                               FTMP(1) = FTMP(1) - RHO * DC(1) * &
+                                    MYDFDR*CONJGBLOCH
+
+                               FTMP(2) = FTMP(2) - RHO * DC(2) * &
+                                    MYDFDR*CONJGBLOCH
+
+                               FTMP(3) = FTMP(3) - RHO * DC(3) * &
+                                    MYDFDR*CONJGBLOCH
+
+
+                          ENDDO
+
+                          !DO KX = 1, NKX
+
+                          !   DO KY = 1, NKY
+
+                          !      DO KZ = 1, NKZ
+
+                          !         KPOINT = ZERO
+                          !         KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+                          !         KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+                          !         KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+
+                          !         KCOUNT = KCOUNT+1
+
+                          !         KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                          !              KPOINT(3)*RIJ(3)
+
+                          !         CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+
+                          !         SELECT CASE(SPINON)
+                          !         CASE(0)
+                          !            RHO = KBO(K,L, KCOUNT)
+                          !         CASE(1)
+                          !            RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
+                          !         END SELECT
+
+
+
+                          !         FTMP(1) = FTMP(1) + RHO * &
+                          !              (-RIJ(2) / MAGRP2 * MYDFDA)*CONJGBLOCH
+
+                          !         FTMP(2) = FTMP(2) + RHO * &
+                          !              (RIJ(1)/ MAGRP2 * MYDFDA)*CONJGBLOCH
 
                                    !
                                    ! d/d_beta
                                    !
 
-                                   FTMP(1) = FTMP(1) + RHO * &
-                                        (((((RIJ(3) * RIJ(1)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+                          !         FTMP(1) = FTMP(1) + RHO * &
+                          !              (((((RIJ(3) * RIJ(1)) / &
+                          !              MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
 
-                                   FTMP(2) = FTMP(2) + RHO * &
-                                        (((((RIJ(3) * RIJ(2)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+                          !         FTMP(2) = FTMP(2) + RHO * &
+                          !              (((((RIJ(3) * RIJ(2)) / &
+                          !              MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
 
-                                   FTMP(3) = FTMP(3) - RHO * &
-                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
+                          !         FTMP(3) = FTMP(3) - RHO * &
+                          !              (((ONE - ((RIJ(3) * RIJ(3)) / &
+                          !              MAGR2)) / MAGRP) * MYDFDB)*CONJGBLOCH
 
                                    !
                                    ! d/dR
                                    !
 
-                                   FTMP(1) = FTMP(1) - RHO * DC(1) * &
-                                        MYDFDR*CONJGBLOCH
+                          !         FTMP(1) = FTMP(1) - RHO * DC(1) * &
+                          !              MYDFDR*CONJGBLOCH
 
-                                   FTMP(2) = FTMP(2) - RHO * DC(2) * &
-                                        MYDFDR*CONJGBLOCH
+                          !         FTMP(2) = FTMP(2) - RHO * DC(2) * &
+                          !              MYDFDR*CONJGBLOCH
 
-                                   FTMP(3) = FTMP(3) - RHO * DC(3) * &
-                                        MYDFDR*CONJGBLOCH
+                          !         FTMP(3) = FTMP(3) - RHO * DC(3) * &
+                          !              MYDFDR*CONJGBLOCH
 
 
-                                ENDDO
-                             ENDDO
-                          ENDDO
+                          !      ENDDO
+                          !   ENDDO
+                          !ENDDO
 
 
                        ELSE
@@ -337,44 +394,68 @@ SUBROUTINE KGRADH
 !                          MYDFDR = DFDR(I, J, LBRA, LKET, MBRA, &
 !                               MKET, MAGR, ZERO, COSBETA, "H")
 
+                          DO KCOUNT =1 ,NKLOCAL
+                               KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                               KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                               KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+                               KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
 
-                          KCOUNT = 0
-                          DO KX = 1, NKX
+                               KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                                        KPOINT(3)*RIJ(3)
 
-                             DO KY = 1, NKY
+                               CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
 
-                                DO KZ = 1, NKZ
+                               SELECT CASE(SPINON)
+                               CASE(0)
+                                  RHO = KBO(K,L, KCOUNT)
+                               CASE(1)
+                                  RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
+                               END SELECT
+
+                               FTMP(1) = FTMP(1) - RHO * COSBETA * MYDFDB*CONJGBLOCH
+                               FTMP(2) = FTMP(2) - RHO * COSBETA * TMPVAL*CONJGBLOCH
+                               FTMP(3) = FTMP(3) - RHO * COSBETA * MYDFDR*CONJGBLOCH
+
+                          ENDDO
+
+ 
+                          !KCOUNT = 0
+                          !DO KX = 1, NKX
+
+                          !   DO KY = 1, NKY
+
+                          !      DO KZ = 1, NKZ
 
 !                                   KPOINT = TWO*PI*(REAL(KX-1)*B1/REAL(NKX) + &
 !                                        REAL(KY-1)*B2/REAL(NKY) + &
 !                                        REAL(KZ-1)*B3/REAL(NKZ)) + K0
                                    
-                                   KPOINT = ZERO
-                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+                          !         KPOINT = ZERO
+                          !         KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+                          !         KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+                          !         KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
 
-                                   KCOUNT = KCOUNT+1
+                          !         KCOUNT = KCOUNT+1
 
-                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
-                                        KPOINT(3)*RIJ(3)
+                          !         KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                          !              KPOINT(3)*RIJ(3)
 
-                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+                          !         CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
 
-                                   SELECT CASE(SPINON)
-                                   CASE(0)
-                                      RHO = KBO(K,L, KCOUNT)
-                                   CASE(1)
-                                      RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
-                                   END SELECT
+                          !         SELECT CASE(SPINON)
+                          !         CASE(0)
+                          !            RHO = KBO(K,L, KCOUNT)
+                          !         CASE(1)
+                          !            RHO = KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT)
+                          !         END SELECT
 
-                                   FTMP(1) = FTMP(1) - RHO * COSBETA * MYDFDB*CONJGBLOCH
-                                   FTMP(2) = FTMP(2) - RHO * COSBETA * TMPVAL*CONJGBLOCH
-                                   FTMP(3) = FTMP(3) - RHO * COSBETA * MYDFDR*CONJGBLOCH
+                          !         FTMP(1) = FTMP(1) - RHO * COSBETA * MYDFDB*CONJGBLOCH
+                          !         FTMP(2) = FTMP(2) - RHO * COSBETA * TMPVAL*CONJGBLOCH
+                          !         FTMP(3) = FTMP(3) - RHO * COSBETA * MYDFDR*CONJGBLOCH
 
-                                ENDDO
-                             ENDDO
-                          ENDDO
+                          !      ENDDO
+                          !   ENDDO
+                          !ENDDO
 
                        ENDIF
 

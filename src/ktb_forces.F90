@@ -55,7 +55,7 @@ SUBROUTINE KTBFORCES
   COMPLEX(LATTEPREC) :: FTMP_BOND(3)
   COMPLEX(LATTEPREC) :: FTMP_PULAY(3), FTMP_COUL(3), FTMP_SPIN(3)
   COMPLEX(LATTEPREC) :: RHO_PULAY, RHO, RHODIFF, CONJGBLOCH, VIRPULK(6)
-  COMPLEX(LATTEPREC), ALLOCATABLE :: KX2HRHO(:,:,:), KTMP(:,:), KTMP2(:,:), KFPUL(:,:)
+  COMPLEX(LATTEPREC), ALLOCATABLE :: KX2HRHO(:,:,:), KTMP(:,:), KTMP2(:,:), KFPUL(:,:) 
   COMPLEX(LATTEPREC), PARAMETER :: ZONE=CMPLX(ONE), ZZERO=CMPLX(ZERO), ZHALF=CMPLX(HALF)
 
   LOGICAL PATH
@@ -196,7 +196,7 @@ SUBROUTINE KTBFORCES
 !$OMP SHARED(KRHOUP, KRHODOWN, SPINON, H2VECT) &
 !$OMP SHARED(HCUT, SCUT, MATINDLIST, BASISTYPE, ELECTRO) &
 !$OMP SHARED(DELTASPIN, WSS, WPP, WDD, WFF, SPININDLIST) &
-!$OMP SHARED(K0, B1, B2, B3, NKX, NKY, NKZ, KF, KFPUL) &
+!$OMP SHARED(K0, B1, B2, B3, NKX, NKY, NKZ, KF, KFPUL,NKTOT,NKLOCAL,KPOINT_LIST) &
 !$OMP SHARED(LCNSHIFT, HUBBARDU, DELTAQ, COULOMBV, ORBITAL_LIST, CUTOFF_LIST) &
 !$OMP PRIVATE(I, J, K, NEWJ, BASISI, BASISJ, INDI, INDJ, PBCI, PBCJ, PBCK) &
 !$OMP PRIVATE(RIJ, MAGR2, MAGR, MAGRP2, MAGRP, PATH, PHI, ALPHA, BETA, COSBETA)&
@@ -348,175 +348,334 @@ SUBROUTINE KTBFORCES
                                MYDFDA, MYDFDB, MYDFDR, &
                                SMYDFDA, SMYDFDB, SMYDFDR)
 
-                          KCOUNT = 0
+                          DO KCOUNT =1 ,NKLOCAL
+                             KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                             KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                             KPOINT(3) = KPOINT_LIST(KCOUNT,3) 
+                             KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
 
-                          DO KX = 1, NKX
-
-                             DO KY = 1, NKY
-
-                                DO KZ = 1, NKZ
-
-                                   KPOINT = ZERO
-                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-                                   
-                                   KCOUNT = KCOUNT+1
-
-                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                             KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
                                         KPOINT(3)*RIJ(3)
 
-                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+                             CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
 
-                                   RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
+                             RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
 
-                                   SELECT CASE(SPINON)
-                                   CASE(0)
-                                      RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
-                                   CASE(1)
-                                      RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
-                                      RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
-                                           CONJGBLOCH*(H2VECT(K) + H2VECT(L))
-                                   END SELECT
-                                      
-                                   !
-                                   ! d/d_alpha
-                                   !
+                             SELECT CASE(SPINON)
+                             CASE(0)
+                                RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
+                             CASE(1)
+                                RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
+                                RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
+                                     CONJGBLOCH*(H2VECT(K) + H2VECT(L))
+                             END SELECT
+                                
+                             !
+                             ! d/d_alpha
+                             !
 
-                                   FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
-                                        (-RIJ(2) / MAGRP2 * MYDFDA)
+                             FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
+                                  (-RIJ(2) / MAGRP2 * MYDFDA)
 
-                                   FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
-                                        (RIJ(1)/ MAGRP2 * MYDFDA)
-                                   
-                                   FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
-                                        (-RIJ(2) / MAGRP2 * SMYDFDA)
+                             FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
+                                  (RIJ(1)/ MAGRP2 * MYDFDA)
+                             
+                             FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
+                                  (-RIJ(2) / MAGRP2 * SMYDFDA)
 
-                                   FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
-                                        (RIJ(1)/ MAGRP2 * SMYDFDA)
+                             FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
+                                  (RIJ(1)/ MAGRP2 * SMYDFDA)
 
-                                   FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
-                                        (-RIJ(2) / MAGRP2 * SMYDFDA)
+                             FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
+                                  (-RIJ(2) / MAGRP2 * SMYDFDA)
 
-                                   FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
-                                        (RIJ(1)/ MAGRP2 * SMYDFDA)
+                             FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
+                                  (RIJ(1)/ MAGRP2 * SMYDFDA)
 
-                                   IF (SPINON .EQ. 1) THEN
+                             IF (SPINON .EQ. 1) THEN
 
-                                      FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
-                                           (-RIJ(2) / MAGRP2 * SMYDFDA)
-                                      
-                                      FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
-                                           (RIJ(1)/ MAGRP2 * SMYDFDA)
-                                      
-                                   ENDIF
+                                FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
+                                     (-RIJ(2) / MAGRP2 * SMYDFDA)
+                                
+                                FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
+                                     (RIJ(1)/ MAGRP2 * SMYDFDA)
+                                
+                             ENDIF
 
-                                   !
-                                   ! d/d_beta
-                                   !
+                             !
+                             ! d/d_beta
+                             !
 
-                                   FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
-                                        (((((RIJ(3) * RIJ(1)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)
-                                   
-                                   FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
-                                        (((((RIJ(3) * RIJ(2)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)
-                                   
-                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * &
-                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
-                                        MAGR2)) / MAGRP) * MYDFDB)
-                                   
-                                   
-                                   FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
-                                        (((((RIJ(3) * RIJ(1)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
+                                  (((((RIJ(3) * RIJ(1)) / &
+                                  MAGR2)) / MAGRP) * MYDFDB)
+                             
+                             FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
+                                  (((((RIJ(3) * RIJ(2)) / &
+                                  MAGR2)) / MAGRP) * MYDFDB)
+                             
+                             FTMP_BOND(3) = FTMP_BOND(3) - RHO * &
+                                  (((ONE - ((RIJ(3) * RIJ(3)) / &
+                                  MAGR2)) / MAGRP) * MYDFDB)
+                             
+                             
+                             FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
+                                  (((((RIJ(3) * RIJ(1)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
-                                        (((((RIJ(3) * RIJ(2)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
+                                  (((((RIJ(3) * RIJ(2)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * &
-                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * &
+                                  (((ONE - ((RIJ(3) * RIJ(3)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
-                                        (((((RIJ(3) * RIJ(1)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
+                                  (((((RIJ(3) * RIJ(1)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
-                                        (((((RIJ(3) * RIJ(2)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
+                                  (((((RIJ(3) * RIJ(2)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * &
-                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
-                                        MAGR2)) / MAGRP) * SMYDFDB)
+                             FTMP_COUL(3) = FTMP_COUL(3) - RHO * &
+                                  (((ONE - ((RIJ(3) * RIJ(3)) / &
+                                  MAGR2)) / MAGRP) * SMYDFDB)
 
-                                   IF (SPINON .EQ. 1) THEN
+                             IF (SPINON .EQ. 1) THEN
 
-                                      FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
-                                           (((((RIJ(3) * RIJ(1)) / &
-                                           MAGR2)) / MAGRP) * SMYDFDB)
-                                      
-                                      FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
-                                           (((((RIJ(3) * RIJ(2)) / &
-                                           MAGR2)) / MAGRP) * SMYDFDB)
-                                      
-                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * &
-                                           (((ONE - ((RIJ(3) * RIJ(3)) / &
-                                           MAGR2)) / MAGRP) * SMYDFDB)
-                                      
-                                   ENDIF
-                                   
+                                FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
+                                     (((((RIJ(3) * RIJ(1)) / &
+                                     MAGR2)) / MAGRP) * SMYDFDB)
+                                
+                                FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
+                                     (((((RIJ(3) * RIJ(2)) / &
+                                     MAGR2)) / MAGRP) * SMYDFDB)
+                                
+                                FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * &
+                                     (((ONE - ((RIJ(3) * RIJ(3)) / &
+                                     MAGR2)) / MAGRP) * SMYDFDB)
+                                
+                             ENDIF
+                             
 
-                                   !
-                                   ! d/dR
-                                   !
+                             !
+                             ! d/dR
+                             !
 
-                                   FTMP_BOND(1) = FTMP_BOND(1) - RHO * DC(1) * &
-                                        MYDFDR
-                                   
-                                   FTMP_BOND(2) = FTMP_BOND(2) - RHO * DC(2) * &
-                                        MYDFDR
-                                   
-                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * DC(3) * &
-                                        MYDFDR
-                                   
-                                   FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * DC(1) * &
-                                        SMYDFDR
+                             FTMP_BOND(1) = FTMP_BOND(1) - RHO * DC(1) * &
+                                  MYDFDR
+                             
+                             FTMP_BOND(2) = FTMP_BOND(2) - RHO * DC(2) * &
+                                  MYDFDR
+                             
+                             FTMP_BOND(3) = FTMP_BOND(3) - RHO * DC(3) * &
+                                  MYDFDR
+                             
+                             FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * DC(1) * &
+                                  SMYDFDR
 
-                                   FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * DC(2) * &
-                                        SMYDFDR
+                             FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * DC(2) * &
+                                  SMYDFDR
 
-                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * DC(3) * &
-                                        SMYDFDR
+                             FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * DC(3) * &
+                                  SMYDFDR
 
-                                   FTMP_COUL(1) = FTMP_COUL(1) - RHO * DC(1) * &
-                                        SMYDFDR
+                             FTMP_COUL(1) = FTMP_COUL(1) - RHO * DC(1) * &
+                                  SMYDFDR
 
-                                   FTMP_COUL(2) = FTMP_COUL(2) - RHO * DC(2) * &
-                                        SMYDFDR
+                             FTMP_COUL(2) = FTMP_COUL(2) - RHO * DC(2) * &
+                                  SMYDFDR
 
-                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * DC(3) * &
-                                        SMYDFDR
+                             FTMP_COUL(3) = FTMP_COUL(3) - RHO * DC(3) * &
+                                  SMYDFDR
 
-                                   IF (SPINON .EQ. 1) THEN
-                                      
-                                      FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * DC(1) * &
-                                           SMYDFDR
-                                      
-                                      FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * DC(2) * &
-                                           SMYDFDR
-                                      
-                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * DC(3) * &
-                                           SMYDFDR
-                                      
-                                   ENDIF
+                             IF (SPINON .EQ. 1) THEN
+                                
+                                FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * DC(1) * &
+                                     SMYDFDR
+                                
+                                FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * DC(2) * &
+                                     SMYDFDR
+                                
+                                FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * DC(3) * &
+                                     SMYDFDR
+                                
+                             ENDIF
 
-                                ENDDO
-                             ENDDO
                           ENDDO
 
+
+!                          KCOUNT = 0
+!
+!                          DO KX = 1, NKX
+!
+!                             DO KY = 1, NKY
+!
+!                                DO KZ = 1, NKZ
+!
+!                                   KPOINT = ZERO
+!                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+!                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+!                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+!                                   
+!                                   KCOUNT = KCOUNT+1
+!
+!                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+!                                        KPOINT(3)*RIJ(3)
+!
+!                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+!
+!                                   RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
+!
+!                                   SELECT CASE(SPINON)
+!                                   CASE(0)
+!                                      RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
+!                                   CASE(1)
+!                                      RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
+!                                      RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
+!                                           CONJGBLOCH*(H2VECT(K) + H2VECT(L))
+!                                   END SELECT
+!                                      
+!                                   !
+!                                   ! d/d_alpha
+!                                   !
+!
+!                                   FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
+!                                        (-RIJ(2) / MAGRP2 * MYDFDA)
+!
+!                                   FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
+!                                        (RIJ(1)/ MAGRP2 * MYDFDA)
+!                                   
+!                                   FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
+!                                        (-RIJ(2) / MAGRP2 * SMYDFDA)
+!
+!                                   FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
+!                                        (RIJ(1)/ MAGRP2 * SMYDFDA)
+!
+!                                   FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
+!                                        (-RIJ(2) / MAGRP2 * SMYDFDA)
+!
+!                                   FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
+!                                        (RIJ(1)/ MAGRP2 * SMYDFDA)
+!
+!                                   IF (SPINON .EQ. 1) THEN
+!
+!                                      FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
+!                                           (-RIJ(2) / MAGRP2 * SMYDFDA)
+!                                      
+!                                      FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
+!                                           (RIJ(1)/ MAGRP2 * SMYDFDA)
+!                                      
+!                                   ENDIF
+!
+!                                   !
+!                                   ! d/d_beta
+!                                   !
+!
+!                                   FTMP_BOND(1) = FTMP_BOND(1) + RHO * &
+!                                        (((((RIJ(3) * RIJ(1)) / &
+!                                        MAGR2)) / MAGRP) * MYDFDB)
+!                                   
+!                                   FTMP_BOND(2) = FTMP_BOND(2) + RHO * &
+!                                        (((((RIJ(3) * RIJ(2)) / &
+!                                        MAGR2)) / MAGRP) * MYDFDB)
+!                                   
+!                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * &
+!                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
+!                                        MAGR2)) / MAGRP) * MYDFDB)
+                                   
+!                                   
+!                                   FTMP_PULAY(1) = FTMP_PULAY(1) + RHO_PULAY * &
+!                                        (((((RIJ(3) * RIJ(1)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   FTMP_PULAY(2) = FTMP_PULAY(2) + RHO_PULAY * &
+!                                        (((((RIJ(3) * RIJ(2)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * &
+!                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   FTMP_COUL(1) = FTMP_COUL(1) + RHO * &
+!                                        (((((RIJ(3) * RIJ(1)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   FTMP_COUL(2) = FTMP_COUL(2) + RHO * &
+!                                        (((((RIJ(3) * RIJ(2)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * &
+!                                        (((ONE - ((RIJ(3) * RIJ(3)) / &
+!                                        MAGR2)) / MAGRP) * SMYDFDB)
+!
+!                                   IF (SPINON .EQ. 1) THEN
+!
+!                                      FTMP_SPIN(1) = FTMP_SPIN(1) + RHODIFF * &
+!                                           (((((RIJ(3) * RIJ(1)) / &
+!                                           MAGR2)) / MAGRP) * SMYDFDB)
+!                                      
+!                                      FTMP_SPIN(2) = FTMP_SPIN(2) + RHODIFF * &
+!                                           (((((RIJ(3) * RIJ(2)) / &
+!                                           MAGR2)) / MAGRP) * SMYDFDB)
+!                                      
+!                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * &
+!                                           (((ONE - ((RIJ(3) * RIJ(3)) / &
+!                                           MAGR2)) / MAGRP) * SMYDFDB)
+!                                      
+!                                   ENDIF
+!                                   
+!
+!                                   !
+!                                   ! d/dR
+!                                   !
+!
+!                                   FTMP_BOND(1) = FTMP_BOND(1) - RHO * DC(1) * &
+!                                        MYDFDR
+!                                   
+!                                   FTMP_BOND(2) = FTMP_BOND(2) - RHO * DC(2) * &
+!                                        MYDFDR
+!                                   
+!                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * DC(3) * &
+!                                        MYDFDR
+!                                   
+!                                   FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * DC(1) * &
+!                                        SMYDFDR
+!
+!                                   FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * DC(2) * &
+!                                        SMYDFDR
+!
+!                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * DC(3) * &
+!                                        SMYDFDR
+!
+!                                   FTMP_COUL(1) = FTMP_COUL(1) - RHO * DC(1) * &
+!                                        SMYDFDR
+!
+!                                   FTMP_COUL(2) = FTMP_COUL(2) - RHO * DC(2) * &
+!                                        SMYDFDR
+!
+!                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * DC(3) * &
+!                                        SMYDFDR
+!
+!                                   IF (SPINON .EQ. 1) THEN
+!                                      
+!                                      FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * DC(1) * &
+!                                           SMYDFDR
+!                                      
+!                                      FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * DC(2) * &
+!                                           SMYDFDR
+!                                      
+!                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * DC(3) * &
+!                                           SMYDFDR
+!                                      
+!                                   ENDIF
+!
+!                                ENDDO
+!                             ENDDO
+!                          ENDDO
+!
                        ELSE
 
                           ! pathological configuration in which beta=0
@@ -540,60 +699,104 @@ SUBROUTINE KTBFORCES
                           MYDFDB1 = MYDFDB/MAGR
                           SMYDFDB1 = SMYDFDB/MAGR
                           
-                          KCOUNT = 0
+                          DO KCOUNT =1 ,NKLOCAL
+                             KPOINT(1) = KPOINT_LIST(KCOUNT,1)
+                             KPOINT(2) = KPOINT_LIST(KCOUNT,2)
+                             KPOINT(3) = KPOINT_LIST(KCOUNT,3)
+                             KPOINT = KPOINT(1)*B1 + KPOINT(2)*B2 + KPOINT(3)*B3
 
-                          DO KX = 1, NKX
-
-                             DO KY = 1, NKY
-
-                                DO KZ = 1, NKZ
-
-
-                                   KPOINT = ZERO
-                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
-                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
-                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-                                   
-                                   KCOUNT = KCOUNT+1
-
-                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+                             KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
                                         KPOINT(3)*RIJ(3)
 
-                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+                             CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
 
-                                   RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
+                             RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
 
-                                   SELECT CASE(SPINON)
-                                   CASE(0)
-                                      RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
-                                   CASE(1)
-                                      RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
-                                      RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
-                                           CONJGBLOCH*(H2VECT(K) + H2VECT(L))
-                                   END SELECT
+                             SELECT CASE(SPINON)
+                             CASE(0)
+                                RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
+                             CASE(1)
+                                RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
+                                RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
+                                     CONJGBLOCH*(H2VECT(K) + H2VECT(L))
+                             END SELECT
 
-                                   FTMP_BOND(1) = FTMP_BOND(1) - RHO * COSBETA * MYDFDB0
-                                   FTMP_BOND(2) = FTMP_BOND(2) - RHO * COSBETA * MYDFDB1
-                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * COSBETA * MYDFDR
-                                                                      
-                                   FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * COSBETA * SMYDFDB0
-                                   FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * COSBETA * SMYDFDB1
-                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * COSBETA * SMYDFDR
+                             FTMP_BOND(1) = FTMP_BOND(1) - RHO * COSBETA * MYDFDB0
+                             FTMP_BOND(2) = FTMP_BOND(2) - RHO * COSBETA * MYDFDB1
+                             FTMP_BOND(3) = FTMP_BOND(3) - RHO * COSBETA * MYDFDR
+                                                                
+                             FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * COSBETA * SMYDFDB0
+                             FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * COSBETA * SMYDFDB1
+                             FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * COSBETA * SMYDFDR
 
-                                   FTMP_COUL(1) = FTMP_COUL(1) - RHO * COSBETA * SMYDFDB0
-                                   FTMP_COUL(2) = FTMP_COUL(2) - RHO * COSBETA * SMYDFDB1
-                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * COSBETA * SMYDFDR
+                             FTMP_COUL(1) = FTMP_COUL(1) - RHO * COSBETA * SMYDFDB0
+                             FTMP_COUL(2) = FTMP_COUL(2) - RHO * COSBETA * SMYDFDB1
+                             FTMP_COUL(3) = FTMP_COUL(3) - RHO * COSBETA * SMYDFDR
 
-                                   IF (SPINON .EQ. 1) THEN
-                                      FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * COSBETA * SMYDFDB0
-                                      FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * COSBETA * SMYDFDB1
-                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * COSBETA * SMYDFDR
-                                   ENDIF
+                             IF (SPINON .EQ. 1) THEN
+                                FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * COSBETA * SMYDFDB0
+                                FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * COSBETA * SMYDFDB1
+                                FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * COSBETA * SMYDFDR
+                             ENDIF
 
 
-                                ENDDO
-                             ENDDO
                           ENDDO
+
+
+!                          KCOUNT = 0
+!
+!                          DO KX = 1, NKX
+!
+!                             DO KY = 1, NKY
+!
+!                                DO KZ = 1, NKZ
+!
+!
+!                                   KPOINT = ZERO
+!                                   KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
+!                                   KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
+!                                   KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
+!                                   
+!                                   KCOUNT = KCOUNT+1
+!
+!                                   KDOTL = KPOINT(1)*RIJ(1) + KPOINT(2)*RIJ(2) + &
+!                                        KPOINT(3)*RIJ(3)
+!
+!                                   CONJGBLOCH = EXP(CMPLX(ZERO,-KDOTL))
+!
+!                                   RHO_PULAY = KX2HRHO(K,L,KCOUNT)*CONJGBLOCH
+!
+!                                   SELECT CASE(SPINON)
+!                                   CASE(0)
+!                                      RHO = KBO(K,L,KCOUNT)*CONJGBLOCH
+!                                   CASE(1)
+!                                      RHO = (KRHOUP(K,L,KCOUNT) + KRHODOWN(K,L,KCOUNT))*CONJGBLOCH
+!                                      RHODIFF = (KRHOUP(K,L,KCOUNT) - KRHODOWN(K,L,KCOUNT)) * &
+!                                           CONJGBLOCH*(H2VECT(K) + H2VECT(L))
+!                                   END SELECT
+!
+!                                   FTMP_BOND(1) = FTMP_BOND(1) - RHO * COSBETA * MYDFDB0
+!                                   FTMP_BOND(2) = FTMP_BOND(2) - RHO * COSBETA * MYDFDB1
+!                                   FTMP_BOND(3) = FTMP_BOND(3) - RHO * COSBETA * MYDFDR
+!                                                                      
+!                                   FTMP_PULAY(1) = FTMP_PULAY(1) - RHO_PULAY * COSBETA * SMYDFDB0
+!                                   FTMP_PULAY(2) = FTMP_PULAY(2) - RHO_PULAY * COSBETA * SMYDFDB1
+!                                   FTMP_PULAY(3) = FTMP_PULAY(3) - RHO_PULAY * COSBETA * SMYDFDR
+!
+!                                   FTMP_COUL(1) = FTMP_COUL(1) - RHO * COSBETA * SMYDFDB0
+!                                   FTMP_COUL(2) = FTMP_COUL(2) - RHO * COSBETA * SMYDFDB1
+!                                   FTMP_COUL(3) = FTMP_COUL(3) - RHO * COSBETA * SMYDFDR
+!
+!                                   IF (SPINON .EQ. 1) THEN
+!                                      FTMP_SPIN(1) = FTMP_SPIN(1) - RHODIFF * COSBETA * SMYDFDB0
+!                                      FTMP_SPIN(2) = FTMP_SPIN(2) - RHODIFF * COSBETA * SMYDFDB1
+!                                      FTMP_SPIN(3) = FTMP_SPIN(3) - RHODIFF * COSBETA * SMYDFDR
+!                                   ENDIF
+!
+!
+!                                ENDDO
+!                             ENDDO
+!                          ENDDO
                           
                        ENDIF
 
