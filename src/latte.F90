@@ -120,16 +120,30 @@ PROGRAM LATTE
   ENDIF
 
   CALL GETHDIM
-
+  
   CALL GETMATINDLIST
-
+  IF (PROFILE) THEN
+     PRINT *, "GETMATINDLIST FINISHED"
+  ENDIF
   CALL RHOZERO
+  IF (PROFILE) THEN
+     PRINT *, "RHOZERO FINISHED"
+  ENDIF
   
   CALL GENHONSITE
+  IF (PROFILE) THEN
+     PRINT *, "GETHONSITE FINISHED"
+  ENDIF
 
   CALL GETBNDFIL()
+  IF (PROFILE) THEN
+     PRINT *, "GETBNDFIL FINISHED"
+  ENDIF
 
   CALL BUILD_INTEGRAL_MAP 
+  IF (PROFILE) THEN
+     PRINT *, "BUILD_INTEGRAL_MAP FINISHED"
+  ENDIF
 
   IF (PROFILE) THEN
           PRINT *, "initialization finished"
@@ -200,28 +214,60 @@ PROGRAM LATTE
 
      ELSE
         KCOUNT = 0
-        
+        NKTOT = NKX * NKY * NKZ
+        ALLOCATE(KPOINT_LIST(NKTOT,3))
+        ! Computing the reciprocal lattice vectors
+
+        B1(1) = BOX(2,2)*BOX(3,3) - BOX(3,2)*BOX(2,3)
+        B1(2) = BOX(3,1)*BOX(2,3) - BOX(2,1)*BOX(3,3)
+        B1(3) = BOX(2,1)*BOX(3,2) - BOX(3,1)*BOX(2,2)
+
+        A1A2XA3 = BOX(1,1)*B1(1) + BOX(1,2)*B1(2) + BOX(1,3)*B1(3)
+
+        ! B1 = (A2 X A3)/(A1.(A2 X A3))
+
+        B1 = TWO*PI*B1/A1A2XA3
+
+        ! B2 = (A3 x A1)/(A1(A2 X A3))
+
+        B2(1) = (BOX(3,2)*BOX(1,3) - BOX(1,2)*BOX(3,3))
+        B2(2) = (BOX(1,1)*BOX(3,3) - BOX(3,1)*BOX(1,3))
+        B2(3) = (BOX(3,1)*BOX(1,2) - BOX(1,1)*BOX(3,2))
+
+        B2 = TWO*PI*B2/A1A2XA3
+
+        ! B3 = (A1 x A2)/(A1(A2 X A3))
+
+        B3(1) = (BOX(1,2)*BOX(2,3) - BOX(2,2)*BOX(1,3))
+        B3(2) = (BOX(2,1)*BOX(1,3) - BOX(1,1)*BOX(2,3))
+        B3(3) = (BOX(1,1)*BOX(2,2) - BOX(2,1)*BOX(1,2))
+
+        B3 = TWO*PI*B3/A1A2XA3
+                
         DO KX = 1, NKX
         
            DO KY = 1, NKY
         
               DO KZ = 1, NKZ
         
-                 KPOINT = ZERO
+                 KPOINT = ZERO 
                  KPOINT = KPOINT + (TWO*REAL(KX) - REAL(NKX) - ONE)/(TWO*REAL(NKX))*B1
                  KPOINT = KPOINT + (TWO*REAL(KY) - REAL(NKY) - ONE)/(TWO*REAL(NKY))*B2
                  KPOINT = KPOINT + (TWO*REAL(KZ) - REAL(NKZ) - ONE)/(TWO*REAL(NKZ))*B3
-        
+                  
                  KCOUNT = KCOUNT+1
+                 
                  KPOINT_LIST(KCOUNT,1) = KPOINT(1)
                  KPOINT_LIST(KCOUNT,2) = KPOINT(2)
                  KPOINT_LIST(KCOUNT,3) = KPOINT(3)
 
+
              ENDDO
           ENDDO
         ENDDO
-        NKTOT = KCOUNT
-        NKLOCAL = NKTOT
+     
+        NKLOCAL = KCOUNT
+        
 
         CALL KBLDNEWH
         IF (PROFILE) THEN
