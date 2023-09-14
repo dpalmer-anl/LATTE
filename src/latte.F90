@@ -67,7 +67,7 @@ PROGRAM LATTE
   CALL MPI_COMM_RANK( MPI_COMM_WORLD, MYID, IERR )
   CALL MPI_COMM_SIZE( MPI_COMM_WORLD, NUMPROCS, IERR )
 #endif
-  PRINT *, 'number of processors', NUMPROCS
+  !PRINT *, 'number of processors', NUMPROCS
   PROFILE = .False.
   NUMSCF = 0
   CHEMPOT = ZERO

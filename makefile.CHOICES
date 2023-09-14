@@ -15,7 +15,7 @@ AR = /usr/bin/ar cq
 RANLIB = /usr/bin/ranlib
 
 # Use PROGRESS and BML libraries
-PROGRESS = ON
+PROGRESS = OFF
 PROGRESS_PATH= $(PROGRESS_DIR)/install/lib64
 BML_PATH= $(BML_DIR)/install/lib64
 MAGMA_PATH = $(MAGMA_DIR)/lib
@@ -46,15 +46,15 @@ LINKFLAG = -fopenmp
 
 #BLAS/LAPACK libraries:
 LIB = -fopenmp -lpthread 
-LIB += -L${OLCF_CUDA_ROOT}/lib64 -I${OLCF_CUDA_ROOT}/include -lcublas -lcudart -lcusolver
-LIB += -L${OLCF_ESSL_ROOT}/lib64 -lessl
-LIB += -L${OLCF_NETLIB_LAPACK_ROOT}/lib64 -llapack -lblas
-LIB += -fopenmp -lpthread
+#LIB += -L${OLCF_CUDA_ROOT}/lib64 -I${OLCF_CUDA_ROOT}/include -lcublas -lcudart -lcusolver
+#LIB += -L${OLCF_ESSL_ROOT}/lib64 -lessl
+LIB += -llapack -lblas
+#LIB += -fopenmp -lpthread
 
 #MAGMA
-LIB += -L$(MAGMA_PATH) -lmagma
-LIB += -Wl,-rpath,$(MAGMA_PATH) #embed path into binary so found libmagma.so found at runtime
-FFLAGS += -I$(MAGMA_PATH)/../include
+#LIB += -L$(MAGMA_PATH) -lmagma
+#LIB += -Wl,-rpath,$(MAGMA_PATH) #embed path into binary so found libmagma.so found at runtime
+#FFLAGS += -I$(MAGMA_PATH)/../include
 #LIB +=-L${OLCF_MAGMA_ROOT}/lib64 -lmagma
 #FFLAGS += -I${OLCF_MAGMA_ROOT}/../include
 
